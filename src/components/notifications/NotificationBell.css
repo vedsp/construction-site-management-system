@@ -1,0 +1,130 @@
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+}
+
+.notification-bell-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    padding: 8px;
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.notification-bell-btn:hover {
+    background: var(--bg-light);
+    color: var(--text-primary);
+}
+
+.notification-badge-count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--danger);
+    color: var(--text-white);
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 360px;
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-light);
+    z-index: 500;
+    animation: slideIn 0.2s ease;
+    overflow: hidden;
+}
+
+.notification-dropdown-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.notification-dropdown-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.notification-mark-all {
+    font-size: 0.8125rem;
+    color: var(--primary);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-weight: 500;
+}
+
+.notification-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-light);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background: var(--bg-light);
+}
+
+.notification-item.unread {
+    background: rgba(232, 101, 26, 0.03);
+}
+
+.notification-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.notification-item-content {
+    flex: 1;
+}
+
+.notification-item-message {
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.notification-item-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+@media (max-width: 480px) {
+    .notification-dropdown {
+        width: 300px;
+        right: -60px;
+    }
+}

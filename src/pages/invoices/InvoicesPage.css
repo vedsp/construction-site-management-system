@@ -1,0 +1,121 @@
+.invoices-page {
+    padding: 24px 32px;
+}
+
+.invoice-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    margin-bottom: 20px;
+    transition: var(--transition);
+}
+
+.invoice-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.invoice-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.invoice-number {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.invoice-icon {
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+.invoice-id {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.invoice-project {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.invoice-details-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.invoice-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.invoice-detail-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.invoice-detail-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.invoice-detail-value.amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.invoice-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.invoice-tax-info {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.download-pdf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--border-radius);
+    border: 1.5px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.download-pdf-btn:hover {
+    background: var(--primary);
+    color: var(--text-white);
+}
+
+@media (max-width: 768px) {
+    .invoices-page {
+        padding: 16px;
+    }
+
+    .invoice-details-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

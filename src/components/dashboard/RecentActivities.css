@@ -1,0 +1,78 @@
+.recent-activities {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+}
+
+.recent-activities h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.activity-icon.check {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.activity-icon.warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.activity-icon.task {
+    background: var(--info-bg);
+    color: var(--info);
+}
+
+.activity-icon.clock {
+    background: var(--icon-purple-bg);
+    color: var(--icon-purple);
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-message {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.activity-sub {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.activity-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}

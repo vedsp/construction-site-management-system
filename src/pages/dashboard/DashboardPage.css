@@ -1,0 +1,110 @@
+.dashboard-page {
+    padding: 24px 32px;
+}
+
+.dashboard-welcome {
+    margin-bottom: 24px;
+}
+
+.dashboard-welcome h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.dashboard-welcome p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-top: 4px;
+}
+
+.dashboard-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.status-connected {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    color: var(--success);
+    font-weight: 500;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+}
+
+.demo-badge {
+    display: inline-flex;
+    padding: 3px 12px;
+    border-radius: 12px;
+    background: var(--info-bg);
+    color: var(--info-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.dashboard-petty-cash {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    border-left: 4px solid var(--info);
+    box-shadow: var(--shadow-sm);
+    border-right: 1px solid var(--border-light);
+    border-top: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.petty-cash-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.petty-cash-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.petty-cash-header .pc-icon {
+    color: var(--warning);
+    font-size: 1.25rem;
+}
+
+.petty-cash-sub {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.dashboard-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-page {
+        padding: 16px;
+    }
+
+    .dashboard-welcome h1 {
+        font-size: 1.35rem;
+    }
+}
