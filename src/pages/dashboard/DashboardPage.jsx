@@ -10,7 +10,7 @@ import { toast } from 'react-toastify';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
-    const { user } = useAuth();
+    const { user, userRole } = useAuth();
     const displayName = user?.user_metadata?.full_name || user?.email || 'Project Manager';
 
     const [stats, setStats] = useState({ activeProjects: 0, todayAttendance: 0, pendingApprovals: 0, activeTasks: 0 });
