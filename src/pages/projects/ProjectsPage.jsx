@@ -1,13 +1,25 @@
-import { useState } from 'react';
-import { demoProjects } from '../../services/demoData';
+import { useState, useEffect } from 'react';
+import { getProjects, createProject, updateProject } from '../../services/api';
 import { MdAdd, MdEdit, MdVisibility } from 'react-icons/md';
 import ProjectForm from '../../components/projects/ProjectForm';
+import { toast } from 'react-toastify';
 import './ProjectsPage.css';
 
 const ProjectsPage = () => {
-    const [projects, setProjects] = useState(demoProjects);
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editProject, setEditProject] = useState(null);
+
+    const fetchProjects = () => {
+        setLoading(true);
+        getProjects()
+            .then(setProjects)
+            .catch((e) => toast.error('Failed to load projects: ' + e.message))
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => { fetchProjects(); }, []);
 
     const getStatusBadge = (status) => {
         const map = {
@@ -19,11 +31,18 @@ const ProjectsPage = () => {
         return map[status] || { cls: 'badge-info', label: status };
     };
 
-    const handleSave = (data) => {
-        if (editProject) {
-            setProjects((prev) => prev.map((p) => (p.id === editProject.id ? { ...p, ...data } : p)));
-        } else {
-            setProjects((prev) => [...prev, { ...data, id: `proj-${Date.now()}`, created_at: new Date().toISOString() }]);
+    const handleSave = async (data) => {
+        try {
+            if (editProject) {
+                await updateProject(editProject.id, data);
+                toast.success('Project updated!');
+            } else {
+                await createProject(data);
+                toast.success('Project created!');
+            }
+            fetchProjects();
+        } catch (e) {
+            toast.error('Error saving project: ' + e.message);
         }
         setShowForm(false);
         setEditProject(null);
@@ -57,66 +76,76 @@ const ProjectsPage = () => {
                 <div className="stat-card">
                     <div className="stat-card-content">
                         <p className="stat-label">Total Budget</p>
-                        <h3>₹{(projects.reduce((s, p) => s + p.budget, 0) / 10000000).toFixed(1)}Cr</h3>
+                        <h3>₹{(projects.reduce((s, p) => s + (p.budget || 0), 0) / 10000000).toFixed(1)}Cr</h3>
                     </div>
                 </div>
             </div>
 
-            <div className="projects-grid">
-                {projects.map((project) => {
-                    const { cls, label } = getStatusBadge(project.status);
-                    return (
-                        <div key={project.id} className="project-card">
-                            <div className="project-card-top">
-                                <div>
-                                    <p className="project-card-name">{project.name}</p>
-                                    <p className="project-card-location">{project.location}</p>
-                                    <p className="project-card-client">{project.client}</p>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Loading projects…</div>
+            ) : (
+                <div className="projects-grid">
+                    {projects.map((project) => {
+                        const { cls, label } = getStatusBadge(project.status);
+                        return (
+                            <div key={project.id} className="project-card">
+                                <div className="project-card-top">
+                                    <div>
+                                        <p className="project-card-name">{project.name}</p>
+                                        <p className="project-card-location">{project.location}</p>
+                                        <p className="project-card-client">{project.client}</p>
+                                    </div>
+                                    <span className={`badge ${cls}`}>{label}</span>
                                 </div>
-                                <span className={`badge ${cls}`}>{label}</span>
-                            </div>
 
-                            <div className="project-progress-section">
-                                <div className="project-progress-header">
-                                    <span className="project-progress-label">Progress</span>
-                                    <span className="project-progress-value">{project.progress}%</span>
+                                <div className="project-progress-section">
+                                    <div className="project-progress-header">
+                                        <span className="project-progress-label">Progress</span>
+                                        <span className="project-progress-value">{project.progress}%</span>
+                                    </div>
+                                    <div className="project-progress-bar">
+                                        <div className="project-progress-fill" style={{ width: `${project.progress}%` }}></div>
+                                    </div>
                                 </div>
-                                <div className="project-progress-bar">
-                                    <div className="project-progress-fill" style={{ width: `${project.progress}%` }}></div>
-                                </div>
-                            </div>
 
-                            <div className="project-card-details">
-                                <div className="project-detail">
-                                    <span className="project-detail-label">Start Date</span>
-                                    <span className="project-detail-value">{new Date(project.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                <div className="project-card-details">
+                                    <div className="project-detail">
+                                        <span className="project-detail-label">Start Date</span>
+                                        <span className="project-detail-value">
+                                            {project.start_date ? new Date(project.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                                        </span>
+                                    </div>
+                                    <div className="project-detail">
+                                        <span className="project-detail-label">Deadline</span>
+                                        <span className="project-detail-value">
+                                            {project.deadline ? new Date(project.deadline).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                                        </span>
+                                    </div>
+                                    <div className="project-detail">
+                                        <span className="project-detail-label">Budget</span>
+                                        <span className="project-detail-value">₹{((project.budget || 0) / 100000).toFixed(1)}L</span>
+                                    </div>
                                 </div>
-                                <div className="project-detail">
-                                    <span className="project-detail-label">Deadline</span>
-                                    <span className="project-detail-value">{new Date(project.deadline).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                </div>
-                                <div className="project-detail">
-                                    <span className="project-detail-label">Budget</span>
-                                    <span className="project-detail-value">₹{(project.budget / 100000).toFixed(1)}L</span>
-                                </div>
-                                <div className="project-detail">
-                                    <span className="project-detail-label">Engineers</span>
-                                    <span className="project-detail-value">{project.assigned_engineers?.length || 0} assigned</span>
-                                </div>
-                            </div>
 
-                            <div className="project-card-actions">
-                                <button className="btn btn-outline btn-sm" onClick={() => { setEditProject(project); setShowForm(true); }}>
-                                    <MdEdit /> Edit
-                                </button>
-                                <button className="btn btn-primary btn-sm">
-                                    <MdVisibility /> View Details
-                                </button>
+                                <div className="project-card-actions">
+                                    <button className="btn btn-outline btn-sm" onClick={() => { setEditProject(project); setShowForm(true); }}>
+                                        <MdEdit /> Edit
+                                    </button>
+                                    <button className="btn btn-primary btn-sm">
+                                        <MdVisibility /> View Details
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {projects.length === 0 && !loading && (
+                <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
+                    <p>No projects yet. Create your first project!</p>
+                </div>
+            )}
 
             {showForm && (
                 <ProjectForm

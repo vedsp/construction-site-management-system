@@ -1,20 +1,51 @@
-import { useState } from 'react';
-import { demoEngineers, demoProjects } from '../../services/demoData';
+import { useState, useEffect } from 'react';
+import { getEngineers, getProjects } from '../../services/api';
+import { supabase } from '../../services/supabaseClient';
 import { MdPersonAdd, MdPeople, MdCheckCircle, MdCancel, MdStickyNote2, MdVisibility } from 'react-icons/md';
-import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 import './AttendancePage.css';
 
 const AttendancePage = () => {
-    const { isDemo } = useAuth();
-    const [engineers] = useState(demoEngineers);
+    const [engineers, setEngineers] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchData = () => {
+        setLoading(true);
+        Promise.all([getEngineers(), getProjects()])
+            .then(([engs, projs]) => {
+                setEngineers(engs);
+                setProjects(projs);
+            })
+            .catch((e) => toast.error('Failed to load data: ' + e.message))
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => { fetchData(); }, []);
 
     const total = engineers.length;
     const presentToday = engineers.filter((e) => e.status === 'present').length;
     const absentToday = total - presentToday;
 
     const getProjectName = (projectId) => {
-        const project = demoProjects.find((p) => p.id === projectId);
+        const project = projects.find((p) => p.id === projectId);
         return project ? project.name : 'Unassigned';
+    };
+
+    const handleProjectChange = async (engineerId, projectId) => {
+        try {
+            // Remove any existing assignment for this engineer, then assign to new project
+            await supabase.from('project_assignments').delete().eq('engineer_id', engineerId);
+            if (projectId) {
+                const { error } = await supabase
+                    .from('project_assignments')
+                    .insert([{ engineer_id: engineerId, project_id: projectId }]);
+                if (error) throw error;
+            }
+            toast.success('Project assignment updated.');
+        } catch (e) {
+            toast.error('Error: ' + e.message);
+        }
     };
 
     return (
@@ -28,7 +59,6 @@ const AttendancePage = () => {
                     <button className="btn btn-primary">
                         <MdPersonAdd /> Add Site Engineer
                     </button>
-                    {isDemo && <span className="demo-badge">Demo Data</span>}
                 </div>
             </div>
 
@@ -66,69 +96,78 @@ const AttendancePage = () => {
                 <div className="attendance-table-header">
                     <h3>All Site Engineers</h3>
                 </div>
-                <div className="attendance-table-scroll">
-                    <table className="attendance-table">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Name</th>
-                                <th>Assigned Project</th>
-                                <th>Daily Task</th>
-                                <th>Status</th>
-                                <th>Check-in Time</th>
-                                <th>DPRs</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {engineers.map((eng) => (
-                                <tr key={eng.id}>
-                                    <td>
-                                        <input type="checkbox" />
-                                    </td>
-                                    <td>
-                                        <div className="worker-info">
-                                            <div className="worker-avatar">
-                                                {eng.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="worker-name">{eng.name}</p>
-                                                <p className="worker-username">@{eng.username}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <select className="form-select" defaultValue={eng.project_id} style={{ minWidth: '180px', padding: '6px 10px', fontSize: '0.8125rem' }}>
-                                            {demoProjects.map((p) => (
-                                                <option key={p.id} value={p.id}>{p.name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                            <button className="note-btn"><MdStickyNote2 style={{ marginRight: '4px' }} />Note</button>
-                                            <span className="unknown-badge">Unknown</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge ${eng.status === 'present' ? 'on-site' : 'absent'}`}>
-                                            {eng.status === 'present' ? '● On Site' : 'Absent'}
-                                        </span>
-                                    </td>
-                                    <td style={{ color: eng.check_in === '-' ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                                        {eng.check_in}
-                                    </td>
-                                    <td>{eng.dpr_count} reports</td>
-                                    <td>
-                                        <button className="btn btn-outline btn-sm">
-                                            <MdVisibility /> View DPRs
-                                        </button>
-                                    </td>
+                {loading ? (
+                    <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading engineers…</div>
+                ) : (
+                    <div className="attendance-table-scroll">
+                        <table className="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Name</th>
+                                    <th>Assigned Project</th>
+                                    <th>Daily Task</th>
+                                    <th>Status</th>
+                                    <th>Check-in Time</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {engineers.map((eng) => (
+                                    <tr key={eng.id}>
+                                        <td><input type="checkbox" /></td>
+                                        <td>
+                                            <div className="worker-info">
+                                                <div className="worker-avatar">{eng.full_name.charAt(0)}</div>
+                                                <div>
+                                                    <p className="worker-name">{eng.full_name}</p>
+                                                    <p className="worker-username">@{eng.full_name.split(' ')[0].toLowerCase()}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select
+                                                className="form-select"
+                                                defaultValue=""
+                                                onChange={(e) => handleProjectChange(eng.id, e.target.value)}
+                                                style={{ minWidth: '180px', padding: '6px 10px', fontSize: '0.8125rem' }}
+                                            >
+                                                <option value="">-- Select Project --</option>
+                                                {projects.map((p) => (
+                                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                <button className="note-btn"><MdStickyNote2 style={{ marginRight: '4px' }} />Note</button>
+                                                <span className="unknown-badge">Unknown</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className={`status-badge ${eng.status === 'present' ? 'on-site' : 'absent'}`}>
+                                                {eng.status === 'present' ? '● On Site' : 'Absent'}
+                                            </span>
+                                        </td>
+                                        <td style={{ color: 'var(--text-muted)' }}>—</td>
+                                        <td>
+                                            <button className="btn btn-outline btn-sm">
+                                                <MdVisibility /> View DPRs
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {engineers.length === 0 && (
+                                    <tr>
+                                        <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                                            No site engineers found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

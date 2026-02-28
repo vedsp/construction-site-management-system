@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { demoProjects } from '../../services/demoData';
 import { MdClose, MdAdd, MdDelete } from 'react-icons/md';
 
-const MaterialRequestForm = ({ onSave, onClose }) => {
+const MaterialRequestForm = ({ projects = [], onSave, onClose }) => {
     const [projectId, setProjectId] = useState('');
     const [requestedBy, setRequestedBy] = useState('');
     const [requiredBy, setRequiredBy] = useState('');
@@ -51,7 +50,7 @@ const MaterialRequestForm = ({ onSave, onClose }) => {
                             <label className="form-label">Project <span className="required">*</span></label>
                             <select className="form-select" value={projectId} onChange={(e) => setProjectId(e.target.value)} required>
                                 <option value="">Select project</option>
-                                {demoProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         </div>
                         <div className="form-group">

@@ -1,27 +1,52 @@
-import { useState } from 'react';
-import { demoTasks, demoProjects, demoWorkers } from '../../services/demoData';
+import { useState, useEffect } from 'react';
+import { getTasks, getProjects, getWorkers, createTask, updateTaskStatus } from '../../services/api';
 import { MdAdd } from 'react-icons/md';
 import TaskForm from '../../components/tasks/TaskForm';
+import { toast } from 'react-toastify';
 import './TasksPage.css';
 
 const TasksPage = () => {
-    const [tasks, setTasks] = useState(demoTasks);
+    const [tasks, setTasks] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [workers, setWorkers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [showForm, setShowForm] = useState(false);
 
     const filters = ['all', 'pending', 'in_progress', 'completed'];
 
-    const filtered = filter === 'all' ? tasks : tasks.filter((t) => t.status === filter);
-
-    const getProjectName = (id) => demoProjects.find((p) => p.id === id)?.name || 'N/A';
-    const getWorkerName = (id) => demoWorkers.find((w) => w.id === id)?.name || 'Unassigned';
-
-    const updateStatus = (taskId, status) => {
-        setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status } : t));
+    const fetchData = () => {
+        setLoading(true);
+        Promise.all([getTasks(), getProjects(), getWorkers()])
+            .then(([t, p, w]) => { setTasks(t); setProjects(p); setWorkers(w); })
+            .catch((e) => toast.error('Failed to load tasks: ' + e.message))
+            .finally(() => setLoading(false));
     };
 
-    const handleSave = (data) => {
-        setTasks((prev) => [...prev, { ...data, id: `task-${Date.now()}`, created_at: new Date().toISOString().split('T')[0] }]);
+    useEffect(() => { fetchData(); }, []);
+
+    const filtered = filter === 'all' ? tasks : tasks.filter((t) => t.status === filter);
+
+    const getProjectName = (task) => task.project?.name || projects.find((p) => p.id === task.project_id)?.name || 'N/A';
+    const getWorkerName = (task) => task.worker?.name || workers.find((w) => w.id === task.assigned_to)?.name || 'Unassigned';
+
+    const handleStatusChange = async (taskId, status) => {
+        try {
+            await updateTaskStatus(taskId, status);
+            setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status } : t));
+        } catch (e) {
+            toast.error('Error updating status: ' + e.message);
+        }
+    };
+
+    const handleSave = async (data) => {
+        try {
+            const created = await createTask(data);
+            setTasks((prev) => [created, ...prev]);
+            toast.success('Task created!');
+        } catch (e) {
+            toast.error('Error: ' + e.message);
+        }
         setShowForm(false);
     };
 
@@ -81,53 +106,64 @@ const TasksPage = () => {
                 ))}
             </div>
 
-            <div className="tasks-table-wrapper">
-                <div className="tasks-table-scroll">
-                    <table className="tasks-table">
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Project</th>
-                                <th>Assigned To</th>
-                                <th>Priority</th>
-                                <th>Deadline</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((task) => (
-                                <tr key={task.id}>
-                                    <td style={{ fontWeight: 600 }}>{task.title}</td>
-                                    <td>{getProjectName(task.project_id)}</td>
-                                    <td>{getWorkerName(task.assigned_to)}</td>
-                                    <td><span className={`priority-badge ${task.priority}`}>{task.priority}</span></td>
-                                    <td>{new Date(task.deadline).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                                    <td>
-                                        <select
-                                            className="task-status-select"
-                                            value={task.status}
-                                            onChange={(e) => updateStatus(task.id, e.target.value)}
-                                        >
-                                            <option value="pending">Pending</option>
-                                            <option value="in_progress">In Progress</option>
-                                            <option value="completed">Completed</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                            ))}
-                            {filtered.length === 0 && (
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Loading tasks…</div>
+            ) : (
+                <div className="tasks-table-wrapper">
+                    <div className="tasks-table-scroll">
+                        <table className="tasks-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                                        No tasks found.
-                                    </td>
+                                    <th>Task</th>
+                                    <th>Project</th>
+                                    <th>Assigned To</th>
+                                    <th>Priority</th>
+                                    <th>Deadline</th>
+                                    <th>Status</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filtered.map((task) => (
+                                    <tr key={task.id}>
+                                        <td style={{ fontWeight: 600 }}>{task.title}</td>
+                                        <td>{getProjectName(task)}</td>
+                                        <td>{getWorkerName(task)}</td>
+                                        <td><span className={`priority-badge ${task.priority}`}>{task.priority}</span></td>
+                                        <td>{task.deadline ? new Date(task.deadline).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
+                                        <td>
+                                            <select
+                                                className="task-status-select"
+                                                value={task.status}
+                                                onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                                            >
+                                                <option value="pending">Pending</option>
+                                                <option value="in_progress">In Progress</option>
+                                                <option value="completed">Completed</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filtered.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                                            No tasks found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {showForm && <TaskForm onSave={handleSave} onClose={() => setShowForm(false)} />}
+            {showForm && (
+                <TaskForm
+                    projects={projects}
+                    workers={workers}
+                    onSave={handleSave}
+                    onClose={() => setShowForm(false)}
+                />
+            )}
         </div>
     );
 };

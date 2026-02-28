@@ -1,12 +1,22 @@
-import { demoProjects } from '../../services/demoData';
+import { useState, useEffect } from 'react';
+import { getProjects } from '../../services/api';
 import './ActiveProjects.css';
 
 const ActiveProjects = () => {
-    const projects = demoProjects;
+    const [projects, setProjects] = useState([]);
+
+    useEffect(() => {
+        getProjects()
+            .then((data) => setProjects(data.filter((p) => p.status === 'in_progress')))
+            .catch(console.error);
+    }, []);
 
     return (
         <div className="active-projects">
             <h3>Active Projects</h3>
+            {projects.length === 0 && (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No active projects.</p>
+            )}
             {projects.map((project) => (
                 <div key={project.id} className="project-item">
                     <div className="project-item-info">

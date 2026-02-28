@@ -1,12 +1,21 @@
-import { useState } from 'react';
-import { demoInventory } from '../../services/demoData';
+import { useState, useEffect } from 'react';
+import { getMaterials } from '../../services/api';
 import { MdWarning, MdArrowBack } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import './MaterialsPage.css';
 
 const InventoryPage = () => {
     const navigate = useNavigate();
-    const [inventory] = useState(demoInventory);
+    const [inventory, setInventory] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getMaterials()
+            .then(setInventory)
+            .catch((e) => toast.error('Failed to load inventory: ' + e.message))
+            .finally(() => setLoading(false));
+    }, []);
 
     return (
         <div className="materials-page">
@@ -20,38 +29,47 @@ const InventoryPage = () => {
                 </button>
             </div>
 
-            <div className="inventory-grid">
-                {inventory.map((item) => {
-                    const stockPercent = Math.min((item.quantity / (item.min_stock * 3)) * 100, 100);
-                    const isLow = item.quantity <= item.min_stock;
-                    const barColor = isLow ? 'var(--danger)' : stockPercent < 50 ? 'var(--warning)' : 'var(--success)';
-
-                    return (
-                        <div key={item.id} className="inventory-card">
-                            <div className="inventory-card-header">
-                                <span className="inventory-item-name">{item.name}</span>
-                                <span className="inventory-category">{item.category}</span>
-                            </div>
-                            <div className="inventory-stock">
-                                <span className="inventory-stock-value">{item.quantity}</span>
-                                <span className="inventory-stock-unit">{item.unit}</span>
-                            </div>
-                            <div className="inventory-progress">
-                                <div className="inventory-progress-bar" style={{ width: `${stockPercent}%`, background: barColor }}></div>
-                            </div>
-                            <div className="inventory-meta">
-                                <span>Min Stock: {item.min_stock} {item.unit}</span>
-                                <span>Updated: {new Date(item.last_updated).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
-                            </div>
-                            {isLow && (
-                                <div className="low-stock-warning">
-                                    <MdWarning /> Low Stock Alert
-                                </div>
-                            )}
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Loading inventory…</div>
+            ) : (
+                <div className="inventory-grid">
+                    {inventory.length === 0 && (
+                        <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)', gridColumn: '1/-1' }}>
+                            <p>No inventory items found.</p>
                         </div>
-                    );
-                })}
-            </div>
+                    )}
+                    {inventory.map((item) => {
+                        const stockPercent = Math.min((item.quantity / (item.min_stock * 3)) * 100, 100);
+                        const isLow = item.quantity <= item.min_stock;
+                        const barColor = isLow ? 'var(--danger)' : stockPercent < 50 ? 'var(--warning)' : 'var(--success)';
+
+                        return (
+                            <div key={item.id} className="inventory-card">
+                                <div className="inventory-card-header">
+                                    <span className="inventory-item-name">{item.name}</span>
+                                    <span className="inventory-category">{item.category}</span>
+                                </div>
+                                <div className="inventory-stock">
+                                    <span className="inventory-stock-value">{item.quantity}</span>
+                                    <span className="inventory-stock-unit">{item.unit}</span>
+                                </div>
+                                <div className="inventory-progress">
+                                    <div className="inventory-progress-bar" style={{ width: `${stockPercent}%`, background: barColor }}></div>
+                                </div>
+                                <div className="inventory-meta">
+                                    <span>Min Stock: {item.min_stock} {item.unit}</span>
+                                    <span>Updated: {new Date(item.last_updated).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
+                                </div>
+                                {isLow && (
+                                    <div className="low-stock-warning">
+                                        <MdWarning /> Low Stock Alert
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };

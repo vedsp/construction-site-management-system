@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { demoProjects } from '../../services/demoData';
 import { MdClose } from 'react-icons/md';
 
-const WorkerForm = ({ worker, onSave, onClose }) => {
+const WorkerForm = ({ worker, projects = [], onSave, onClose }) => {
     const [formData, setFormData] = useState({
         name: '',
         username: '',
@@ -73,7 +72,7 @@ const WorkerForm = ({ worker, onSave, onClose }) => {
                         <label className="form-label">Assigned Project</label>
                         <select className="form-select" name="project_id" value={formData.project_id} onChange={handleChange}>
                             <option value="">Select project</option>
-                            {demoProjects.map((p) => (
+                            {projects.map((p) => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
                         </select>

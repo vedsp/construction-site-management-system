@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { demoProjects } from '../../services/demoData';
 import { MdClose, MdAdd, MdDelete } from 'react-icons/md';
 
-const InvoiceForm = ({ onSave, onClose }) => {
+const InvoiceForm = ({ projects = [], onSave, onClose }) => {
+    const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         invoice_number: `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
         project_id: '',
@@ -27,15 +27,25 @@ const InvoiceForm = ({ onSave, onClose }) => {
     const gstAmount = Math.round(subtotal * (formData.gst_percent / 100));
     const total = subtotal + gstAmount;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSave({
+        if (submitting) return;
+        setSubmitting(true);
+        const sanitizedItems = items
+            .filter((item) => item.description.trim())
+            .map((item) => ({
+                description: item.description.trim(),
+                amount: Number(item.amount) || 0,
+            }));
+        await onSave({
             ...formData,
+            gst_percent: Number(formData.gst_percent) || 18,
             subtotal,
             gst_amount: gstAmount,
             total_amount: total,
-            items,
+            items: sanitizedItems,
         });
+        setSubmitting(false);
     };
 
     return (
@@ -55,7 +65,7 @@ const InvoiceForm = ({ onSave, onClose }) => {
                             <label className="form-label">Project</label>
                             <select className="form-select" name="project_id" value={formData.project_id} onChange={handleChange}>
                                 <option value="">Select project</option>
-                                {demoProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         </div>
                     </div>
@@ -101,7 +111,9 @@ const InvoiceForm = ({ onSave, onClose }) => {
 
                     <div className="modal-actions">
                         <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn btn-primary">Create Invoice</button>
+                        <button type="submit" className="btn btn-primary" disabled={submitting}>
+                            {submitting ? 'Creating…' : 'Create Invoice'}
+                        </button>
                     </div>
                 </form>
             </div>

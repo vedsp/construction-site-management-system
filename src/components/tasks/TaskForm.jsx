@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { demoProjects, demoWorkers } from '../../services/demoData';
 import { MdClose } from 'react-icons/md';
 
-const TaskForm = ({ onSave, onClose }) => {
+const TaskForm = ({ projects = [], workers = [], onSave, onClose }) => {
     const [formData, setFormData] = useState({
         title: '', project_id: '', assigned_to: '',
         priority: 'medium', status: 'pending', deadline: '',
@@ -35,14 +34,14 @@ const TaskForm = ({ onSave, onClose }) => {
                             <label className="form-label">Project</label>
                             <select className="form-select" name="project_id" value={formData.project_id} onChange={handleChange}>
                                 <option value="">Select project</option>
-                                {demoProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Assign To</label>
                             <select className="form-select" name="assigned_to" value={formData.assigned_to} onChange={handleChange}>
                                 <option value="">Select worker</option>
-                                {demoWorkers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                                {workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                             </select>
                         </div>
                     </div>
