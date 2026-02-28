@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 
@@ -20,6 +20,15 @@ import ProjectsPage from './pages/projects/ProjectsPage';
 import TasksPage from './pages/tasks/TasksPage';
 import InvoicesPage from './pages/invoices/InvoicesPage';
 import ReportsPage from './pages/reports/ReportsPage';
+import WorkerDashboardPage from './pages/worker/WorkerDashboardPage';
+
+// Redirects workers to /worker-dashboard; redirects non-workers away from it
+const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
+  const { userRole } = useAuth();
+  const role = userRole || 'admin';
+  if (!allowedRoles.includes(role)) return <Navigate to={redirectTo} replace />;
+  return children;
+};
 
 function App() {
   return (
@@ -39,15 +48,59 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/attendance" element={<AttendancePage />} />
-            <Route path="/workers" element={<WorkersPage />} />
-            <Route path="/materials" element={<MaterialsPage />} />
-            <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/invoices" element={<InvoicesPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
+            {/* Management routes — workers are redirected away */}
+            <Route path="/dashboard" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <DashboardPage />
+              </RoleRedirect>
+            } />
+            <Route path="/attendance" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <AttendancePage />
+              </RoleRedirect>
+            } />
+            <Route path="/workers" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <WorkersPage />
+              </RoleRedirect>
+            } />
+            <Route path="/materials" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <MaterialsPage />
+              </RoleRedirect>
+            } />
+            <Route path="/inventory" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <InventoryPage />
+              </RoleRedirect>
+            } />
+            <Route path="/projects" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <ProjectsPage />
+              </RoleRedirect>
+            } />
+            <Route path="/tasks" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <TasksPage />
+              </RoleRedirect>
+            } />
+            <Route path="/invoices" element={
+              <RoleRedirect allowedRoles={['admin']} redirectTo="/worker-dashboard">
+                <InvoicesPage />
+              </RoleRedirect>
+            } />
+            <Route path="/reports" element={
+              <RoleRedirect allowedRoles={['admin']} redirectTo="/worker-dashboard">
+                <ReportsPage />
+              </RoleRedirect>
+            } />
+
+            {/* Worker-only route */}
+            <Route path="/worker-dashboard" element={
+              <RoleRedirect allowedRoles={['worker']} redirectTo="/dashboard">
+                <WorkerDashboardPage />
+              </RoleRedirect>
+            } />
           </Route>
 
           {/* Default redirect */}

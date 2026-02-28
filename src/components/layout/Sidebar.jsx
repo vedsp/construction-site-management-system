@@ -18,20 +18,27 @@ import {
 } from 'react-icons/md';
 import './Sidebar.css';
 
+const ALL_ROLES = ['admin', 'site_engineer', 'worker'];
+const MGMT_ROLES = ['admin', 'site_engineer'];
+
 const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: MdDashboard },
-    { path: '/attendance', label: 'Attendance', icon: MdAccessTime },
-    { path: '/workers', label: 'Workers', icon: MdPeople },
-    { path: '/materials', label: 'Materials', icon: MdInventory2 },
-    { path: '/projects', label: 'Projects', icon: MdFolder },
-    { path: '/tasks', label: 'Tasks', icon: MdAssignment },
-    { path: '/invoices', label: 'Invoices', icon: MdReceipt },
-    { path: '/reports', label: 'Reports', icon: MdBarChart },
+    { path: '/dashboard', label: 'Dashboard', icon: MdDashboard, roles: MGMT_ROLES },
+    { path: '/attendance', label: 'Attendance', icon: MdAccessTime, roles: MGMT_ROLES },
+    { path: '/workers', label: 'Workers', icon: MdPeople, roles: MGMT_ROLES },
+    { path: '/materials', label: 'Materials', icon: MdInventory2, roles: MGMT_ROLES },
+    { path: '/projects', label: 'Projects', icon: MdFolder, roles: MGMT_ROLES },
+    { path: '/tasks', label: 'Tasks', icon: MdAssignment, roles: MGMT_ROLES },
+    { path: '/invoices', label: 'Invoices', icon: MdReceipt, roles: ['admin'] },
+    { path: '/reports', label: 'Reports', icon: MdBarChart, roles: ['admin'] },
+    // Worker-only nav
+    { path: '/worker-dashboard', label: 'My Dashboard', icon: MdDashboard, roles: ['worker'] },
 ];
 
 const Sidebar = ({ isOpen, onToggle }) => {
     const { user, userRole, logout } = useAuth();
     const navigate = useNavigate();
+    const role = userRole || 'admin';
+    const visibleNavItems = navItems.filter((item) => item.roles.includes(role));
 
     const handleLogout = async () => {
         await logout();
@@ -73,7 +80,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
                 </div>
 
                 <nav className="sidebar-nav">
-                    {navItems.map((item) => (
+                    {visibleNavItems.map((item) => (
                         <NavLink
                             key={item.path}
                             to={item.path}

@@ -299,7 +299,7 @@ export async function getSiteEngineers() {
     const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name')
-        .eq('role', 'site_engineer')
+        .in('role', ['site_engineer', 'admin'])
         .order('full_name');
     if (error) throw error;
     return data || [];
@@ -327,6 +327,47 @@ export async function addPettyCashTransaction({ engineerId, type, amount, descri
             description,
             recorded_by: recordedBy,
         }])
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+// ─── WORKER-SPECIFIC ──────────────────────────────────────────────────────────
+
+export async function getWorkerTasks(userId) {
+    const { data, error } = await supabase
+        .from('tasks')
+        .select('*, project:projects(name)')
+        .eq('assigned_to', userId)
+        .order('due_date', { ascending: true });
+    if (error) throw error;
+    return data || [];
+}
+
+export async function getWorkerAttendanceToday(workerId) {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('worker_id', workerId)
+        .eq('date', today)
+        .maybeSingle();
+    if (error) throw error;
+    return data; // null if no record yet
+}
+
+export async function markWorkerAttendance(workerId, status) {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+        .from('attendance')
+        .upsert([{
+            worker_id: workerId,
+            date: today,
+            status,
+            check_in_time: status === 'present' ? now : null,
+        }], { onConflict: 'worker_id,date' })
         .select()
         .single();
     if (error) throw error;
