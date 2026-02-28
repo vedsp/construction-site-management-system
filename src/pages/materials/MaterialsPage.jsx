@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import './MaterialsPage.css';
 
 const MaterialsPage = () => {
-    const { user } = useAuth();
+    const { user, userRole } = useAuth();
     const navigate = useNavigate();
     const [requests, setRequests] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -167,12 +167,16 @@ const MaterialsPage = () => {
                             {request.status === 'pending' && (
                                 <div className="request-card-buttons">
                                     <button className="btn btn-outline btn-sm"><MdEdit /> Edit</button>
-                                    <button className="btn btn-success btn-sm" onClick={() => handleApprove(request.id)}>
-                                        <MdCheckCircle /> Approve
-                                    </button>
-                                    <button className="btn btn-danger btn-sm" onClick={() => handleReject(request.id)}>
-                                        <MdCancel /> Reject
-                                    </button>
+                                    {userRole === 'admin' && (
+                                        <>
+                                            <button className="btn btn-success btn-sm" onClick={() => handleApprove(request.id)}>
+                                                <MdCheckCircle /> Approve
+                                            </button>
+                                            <button className="btn btn-danger btn-sm" onClick={() => handleReject(request.id)}>
+                                                <MdCancel /> Reject
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
