@@ -123,91 +123,93 @@ const DashboardPage = () => {
 
             <QuickActions />
 
-            <div className="dashboard-petty-cash">
-                <div className="petty-cash-header">
-                    <MdAccountBalanceWallet className="pc-icon" />
-                    <h3>Manage Petty Cash</h3>
-                </div>
-                <p className="petty-cash-sub">Select Site Engineer</p>
-                <select
-                    className="form-select"
-                    value={selectedEngineerId}
-                    onChange={(e) => handleEngineerSelect(e.target.value)}
-                >
-                    <option value="">-- Select Site Engineer --</option>
-                    {engineers.map((eng) => (
-                        <option key={eng.id} value={eng.id}>{eng.full_name}</option>
-                    ))}
-                </select>
-
-                {selectedEngineerId && (
-                    <div style={{ marginTop: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Current Balance</span>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 700, color: pcBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                                ₹{Math.abs(pcBalance).toLocaleString('en-IN')}
-                            </span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-                            <input
-                                className="form-input"
-                                type="number"
-                                placeholder="Amount (₹)"
-                                value={pcAmount}
-                                onChange={(e) => setPcAmount(e.target.value)}
-                                min="1"
-                            />
-                            <input
-                                className="form-input"
-                                type="text"
-                                placeholder="Description (optional)"
-                                value={pcDescription}
-                                onChange={(e) => setPcDescription(e.target.value)}
-                            />
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                            <button
-                                className="btn btn-success btn-sm"
-                                style={{ flex: 1 }}
-                                onClick={() => handlePcAction('credit')}
-                                disabled={pcSubmitting}
-                            >
-                                <MdArrowUpward /> Allocate Funds
-                            </button>
-                            <button
-                                className="btn btn-danger btn-sm"
-                                style={{ flex: 1 }}
-                                onClick={() => handlePcAction('debit')}
-                                disabled={pcSubmitting}
-                            >
-                                <MdArrowDownward /> Record Expense
-                            </button>
-                        </div>
-
-                        {pcTransactions.length > 0 && (
-                            <div>
-                                <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Recent Transactions</p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
-                                    {pcTransactions.map((tx) => (
-                                        <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: '8px', background: tx.type === 'credit' ? 'var(--success-bg)' : 'var(--danger-bg)' }}>
-                                            <div>
-                                                <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{tx.description || (tx.type === 'credit' ? 'Funds Allocated' : 'Expense')}</p>
-                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{new Date(tx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                            </div>
-                                            <span style={{ fontWeight: 700, color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)' }}>
-                                                {tx.type === 'credit' ? '+' : '-'}₹{Number(tx.amount).toLocaleString('en-IN')}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        {pcTransactions.length === 0 && (
-                            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>No transactions yet.</p>
-                        )}
+            {userRole === 'admin' && (
+                <div className="dashboard-petty-cash">
+                    <div className="petty-cash-header">
+                        <MdAccountBalanceWallet className="pc-icon" />
+                        <h3>Manage Petty Cash</h3>
                     </div>
-                )}
-            </div>
+                    <p className="petty-cash-sub">Select Site Engineer</p>
+                    <select
+                        className="form-select"
+                        value={selectedEngineerId}
+                        onChange={(e) => handleEngineerSelect(e.target.value)}
+                    >
+                        <option value="">-- Select Site Engineer --</option>
+                        {engineers.map((eng) => (
+                            <option key={eng.id} value={eng.id}>{eng.full_name}</option>
+                        ))}
+                    </select>
+
+                    {selectedEngineerId && (
+                        <div style={{ marginTop: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Current Balance</span>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: pcBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                                    ₹{Math.abs(pcBalance).toLocaleString('en-IN')}
+                                </span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    placeholder="Amount (₹)"
+                                    value={pcAmount}
+                                    onChange={(e) => setPcAmount(e.target.value)}
+                                    min="1"
+                                />
+                                <input
+                                    className="form-input"
+                                    type="text"
+                                    placeholder="Description (optional)"
+                                    value={pcDescription}
+                                    onChange={(e) => setPcDescription(e.target.value)}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                                <button
+                                    className="btn btn-success btn-sm"
+                                    style={{ flex: 1 }}
+                                    onClick={() => handlePcAction('credit')}
+                                    disabled={pcSubmitting}
+                                >
+                                    <MdArrowUpward /> Allocate Funds
+                                </button>
+                                <button
+                                    className="btn btn-danger btn-sm"
+                                    style={{ flex: 1 }}
+                                    onClick={() => handlePcAction('debit')}
+                                    disabled={pcSubmitting}
+                                >
+                                    <MdArrowDownward /> Record Expense
+                                </button>
+                            </div>
+
+                            {pcTransactions.length > 0 && (
+                                <div>
+                                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Recent Transactions</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
+                                        {pcTransactions.map((tx) => (
+                                            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: '8px', background: tx.type === 'credit' ? 'var(--success-bg)' : 'var(--danger-bg)' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{tx.description || (tx.type === 'credit' ? 'Funds Allocated' : 'Expense')}</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{new Date(tx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                                </div>
+                                                <span style={{ fontWeight: 700, color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)' }}>
+                                                    {tx.type === 'credit' ? '+' : '-'}₹{Number(tx.amount).toLocaleString('en-IN')}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {pcTransactions.length === 0 && (
+                                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>No transactions yet.</p>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="dashboard-bottom-grid">
                 <ActiveProjects />

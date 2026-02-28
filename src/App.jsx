@@ -60,7 +60,7 @@ function App() {
               </RoleRedirect>
             } />
             <Route path="/workers" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
                 <WorkersPage />
               </RoleRedirect>
             } />
@@ -85,12 +85,12 @@ function App() {
               </RoleRedirect>
             } />
             <Route path="/invoices" element={
-              <RoleRedirect allowedRoles={['admin']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
                 <InvoicesPage />
               </RoleRedirect>
             } />
             <Route path="/reports" element={
-              <RoleRedirect allowedRoles={['admin']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
                 <ReportsPage />
               </RoleRedirect>
             } />

@@ -110,24 +110,17 @@ export async function getWorkersAttendanceToday() {
     const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
         .from('attendance')
-        .select('worker_id, status, check_in_time')
+        .select('worker_id, status')
         .eq('date', today);
     if (error) throw error;
-    // Return as map: { [worker_id]: { status, check_in_time } }
     return Object.fromEntries((data || []).map((r) => [r.worker_id, r]));
 }
 
 export async function markWorkerAttendanceAdmin(workerId, status) {
     const today = new Date().toISOString().split('T')[0];
-    const now = new Date().toISOString();
     const { data, error } = await supabase
         .from('attendance')
-        .upsert([{
-            worker_id: workerId,
-            date: today,
-            status,
-            check_in_time: status === 'present' ? now : null,
-        }], { onConflict: 'worker_id,date' })
+        .upsert([{ worker_id: workerId, date: today, status }], { onConflict: 'worker_id,date' })
         .select()
         .single();
     if (error) throw error;

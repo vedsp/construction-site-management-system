@@ -22,12 +22,12 @@ const ALL_ROLES = ['admin', 'site_engineer', 'worker'];
 const MGMT_ROLES = ['admin', 'site_engineer'];
 
 const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: MdDashboard, roles: MGMT_ROLES },
-    { path: '/attendance', label: 'Attendance', icon: MdAccessTime, roles: MGMT_ROLES },
-    { path: '/workers', label: 'Workers', icon: MdPeople, roles: MGMT_ROLES },
-    { path: '/materials', label: 'Materials', icon: MdInventory2, roles: MGMT_ROLES },
-    { path: '/projects', label: 'Projects', icon: MdFolder, roles: MGMT_ROLES },
-    { path: '/tasks', label: 'Tasks', icon: MdAssignment, roles: MGMT_ROLES },
+    { path: '/dashboard', label: 'Dashboard', icon: MdDashboard, roles: ['admin', 'site_engineer'] },
+    { path: '/attendance', label: 'Attendance', icon: MdAccessTime, roles: ['admin', 'site_engineer'] },
+    { path: '/workers', label: 'Workers', icon: MdPeople, roles: ['admin'] },
+    { path: '/materials', label: 'Materials', icon: MdInventory2, roles: ['admin', 'site_engineer'] },
+    { path: '/projects', label: 'Projects', icon: MdFolder, roles: ['admin', 'site_engineer'] },
+    { path: '/tasks', label: 'Tasks', icon: MdAssignment, roles: ['admin', 'site_engineer'] },
     { path: '/invoices', label: 'Invoices', icon: MdReceipt, roles: ['admin'] },
     { path: '/reports', label: 'Reports', icon: MdBarChart, roles: ['admin'] },
     // Worker-only nav
