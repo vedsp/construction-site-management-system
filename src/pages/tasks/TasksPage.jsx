@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getTasks, getProjects, getWorkers, createTask, updateTaskStatus } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { MdAdd } from 'react-icons/md';
 import TaskForm from '../../components/tasks/TaskForm';
 import { toast } from 'react-toastify';
 import './TasksPage.css';
 
 const TasksPage = () => {
+    const { userRole } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [projects, setProjects] = useState([]);
     const [workers, setWorkers] = useState([]);
@@ -62,9 +64,11 @@ const TasksPage = () => {
                     <h1>Task Management</h1>
                     <p>Create, assign and track tasks across projects</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-                    <MdAdd /> Create Task
-                </button>
+                {userRole === 'admin' && (
+                    <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+                        <MdAdd /> Create Task
+                    </button>
+                )}
             </div>
 
             <div className="stats-grid">
@@ -131,15 +135,21 @@ const TasksPage = () => {
                                         <td><span className={`priority-badge ${task.priority}`}>{task.priority}</span></td>
                                         <td>{task.deadline ? new Date(task.deadline).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
                                         <td>
-                                            <select
-                                                className="task-status-select"
-                                                value={task.status}
-                                                onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                                            >
-                                                <option value="pending">Pending</option>
-                                                <option value="in_progress">In Progress</option>
-                                                <option value="completed">Completed</option>
-                                            </select>
+                                            {userRole === 'admin' ? (
+                                                <select
+                                                    className="task-status-select"
+                                                    value={task.status}
+                                                    onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="completed">Completed</option>
+                                                </select>
+                                            ) : (
+                                                <span className={`badge ${getStatusBadge(task.status)}`}>
+                                                    {task.status === 'in_progress' ? 'In Progress' : task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

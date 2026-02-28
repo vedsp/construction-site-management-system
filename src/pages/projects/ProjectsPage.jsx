@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getProjects, createProject, updateProject } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { MdAdd, MdEdit, MdVisibility } from 'react-icons/md';
 import ProjectForm from '../../components/projects/ProjectForm';
 import { toast } from 'react-toastify';
 import './ProjectsPage.css';
 
 const ProjectsPage = () => {
+    const { userRole } = useAuth();
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -55,9 +57,11 @@ const ProjectsPage = () => {
                     <h1>Project Management</h1>
                     <p>Manage and track all construction projects</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => { setEditProject(null); setShowForm(true); }}>
-                    <MdAdd /> Create Project
-                </button>
+                {userRole === 'admin' && (
+                    <button className="btn btn-primary" onClick={() => { setEditProject(null); setShowForm(true); }}>
+                        <MdAdd /> Create Project
+                    </button>
+                )}
             </div>
 
             <div className="stats-grid">
@@ -128,9 +132,11 @@ const ProjectsPage = () => {
                                 </div>
 
                                 <div className="project-card-actions">
-                                    <button className="btn btn-outline btn-sm" onClick={() => { setEditProject(project); setShowForm(true); }}>
-                                        <MdEdit /> Edit
-                                    </button>
+                                    {userRole === 'admin' && (
+                                        <button className="btn btn-outline btn-sm" onClick={() => { setEditProject(project); setShowForm(true); }}>
+                                            <MdEdit /> Edit
+                                        </button>
+                                    )}
                                     <button className="btn btn-primary btn-sm">
                                         <MdVisibility /> View Details
                                     </button>
