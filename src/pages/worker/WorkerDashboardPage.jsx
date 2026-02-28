@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getWorkerTasks, markWorkerAttendance, getWorkerAttendanceToday } from '../../services/api';
+import { getWorkerTasks, getWorkerAttendanceToday } from '../../services/api';
 import { MdCheckCircle, MdCancel, MdAssignment, MdAccessTime } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import './WorkerDashboardPage.css';
@@ -10,10 +10,9 @@ const WorkerDashboardPage = () => {
     const displayName = user?.user_metadata?.full_name || 'Worker';
 
     const [tasks, setTasks] = useState([]);
-    const [attendance, setAttendance] = useState(null); // today's record
+    const [attendance, setAttendance] = useState(null);
     const [loadingTasks, setLoadingTasks] = useState(true);
     const [loadingAttendance, setLoadingAttendance] = useState(true);
-    const [markingAttendance, setMarkingAttendance] = useState(false);
 
     useEffect(() => {
         if (!user?.id) return;
@@ -28,18 +27,6 @@ const WorkerDashboardPage = () => {
             .catch(() => setAttendance(null))
             .finally(() => setLoadingAttendance(false));
     }, [user?.id]);
-
-    const handleMarkAttendance = async (status) => {
-        setMarkingAttendance(true);
-        try {
-            const record = await markWorkerAttendance(user.id, status);
-            setAttendance(record);
-            toast.success(status === 'present' ? 'Marked as Present!' : 'Marked as Absent.');
-        } catch (e) {
-            toast.error('Error: ' + e.message);
-        }
-        setMarkingAttendance(false);
-    };
 
     const todayStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -64,36 +51,16 @@ const WorkerDashboardPage = () => {
                 ) : attendance ? (
                     <div className={`attendance-status-badge ${attendance.status}`}>
                         {attendance.status === 'present'
-                            ? <><MdCheckCircle /> Marked Present</>
-                            : <><MdCancel /> Marked Absent</>}
+                            ? <><MdCheckCircle /> Present Today</>
+                            : <><MdCancel /> Absent Today</>}
                         <span className="attendance-time">
                             {attendance.check_in_time
-                                ? ` at ${new Date(attendance.check_in_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+                                ? ` · Checked in at ${new Date(attendance.check_in_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
                                 : ''}
                         </span>
                     </div>
                 ) : (
-                    <div className="attendance-actions">
-                        <p className="worker-muted">You haven't marked attendance yet today.</p>
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                            <button
-                                className="btn btn-success"
-                                onClick={() => handleMarkAttendance('present')}
-                                disabled={markingAttendance}
-                                style={{ flex: 1 }}
-                            >
-                                <MdCheckCircle /> Mark Present
-                            </button>
-                            <button
-                                className="btn btn-danger"
-                                onClick={() => handleMarkAttendance('absent')}
-                                disabled={markingAttendance}
-                                style={{ flex: 1 }}
-                            >
-                                <MdCancel /> Mark Absent
-                            </button>
-                        </div>
-                    </div>
+                    <p className="worker-muted">Attendance not marked yet for today.</p>
                 )}
             </div>
 

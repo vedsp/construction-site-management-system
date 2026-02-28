@@ -106,6 +106,78 @@ export async function markAttendance(record) {
     return data;
 }
 
+export async function getWorkersAttendanceToday() {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('worker_id, status, check_in_time')
+        .eq('date', today);
+    if (error) throw error;
+    // Return as map: { [worker_id]: { status, check_in_time } }
+    return Object.fromEntries((data || []).map((r) => [r.worker_id, r]));
+}
+
+export async function markWorkerAttendanceAdmin(workerId, status) {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+        .from('attendance')
+        .upsert([{
+            worker_id: workerId,
+            date: today,
+            status,
+            check_in_time: status === 'present' ? now : null,
+        }], { onConflict: 'worker_id,date' })
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function getWeeklyWages() {
+    // Get Mon of current week
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun
+    const diffToMon = (day === 0 ? -6 : 1 - day);
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + diffToMon);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekStartStr = weekStart.toISOString().split('T')[0];
+    const weekEndStr = now.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('worker_id, status, date')
+        .gte('date', weekStartStr)
+        .lte('date', weekEndStr)
+        .eq('status', 'present');
+    if (error) throw error;
+
+    // Return map: { [worker_id]: { daysPresent, weekStart, weekEnd } }
+    const map = {};
+    (data || []).forEach(({ worker_id }) => {
+        map[worker_id] = (map[worker_id] || 0) + 1;
+    });
+    return { map, weekStart: weekStartStr, weekEnd: weekEndStr };
+}
+
+export async function settleWages({ workerId, periodStart, periodEnd, daysPresent, totalAmount, settledBy }) {
+    const { data, error } = await supabase
+        .from('wage_settlements')
+        .insert([{
+            worker_id: workerId,
+            period_start: periodStart,
+            period_end: periodEnd,
+            days_present: daysPresent,
+            total_amount: totalAmount,
+            settled_by: settledBy,
+        }])
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
 // ─── MATERIALS / INVENTORY ────────────────────────────────────────────────────
 
 export async function getMaterials() {
