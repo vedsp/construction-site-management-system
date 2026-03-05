@@ -11,8 +11,8 @@ import {
     Tooltip,
     Legend,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import { getWorkers, getMaterials, getProjects, getAttendanceToday } from '../../services/api';
+import { Bar, Doughnut } from 'react-chartjs-2';
+import { getWorkers, getMaterials, getProjects, getAttendanceToday, getWeeklyAttendanceByDay } from '../../services/api';
 import { MdPeople, MdInventory2, MdTrendingUp } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import './ReportsPage.css';
@@ -25,6 +25,7 @@ const ReportsPage = () => {
     const [inventory, setInventory] = useState([]);
     const [projects, setProjects] = useState([]);
     const [todayAttendance, setTodayAttendance] = useState([]);
+    const [weeklyAttendance, setWeeklyAttendance] = useState({ labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], presentCounts: [0, 0, 0, 0, 0, 0], absentCounts: [0, 0, 0, 0, 0, 0] });
     const [loading, setLoading] = useState(true);
 
     const tabs = [
@@ -35,12 +36,13 @@ const ReportsPage = () => {
 
     useEffect(() => {
         setLoading(true);
-        Promise.all([getWorkers(), getMaterials(), getProjects(), getAttendanceToday()])
-            .then(([w, m, p, a]) => {
+        Promise.all([getWorkers(), getMaterials(), getProjects(), getAttendanceToday(), getWeeklyAttendanceByDay()])
+            .then(([w, m, p, a, weekly]) => {
                 setWorkers(w);
                 setInventory(m);
                 setProjects(p);
                 setTodayAttendance(a);
+                setWeeklyAttendance(weekly);
             })
             .catch((e) => toast.error('Failed to load report data: ' + e.message))
             .finally(() => setLoading(false));
@@ -52,31 +54,17 @@ const ReportsPage = () => {
 
     // Generate attendance chart with days of the week (today's data + simulated weekly)
     const attendanceChartData = {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        labels: weeklyAttendance.labels,
         datasets: [
             {
                 label: 'Present',
-                data: [
-                    Math.round(workers.length * 0.75),
-                    Math.round(workers.length * 0.88),
-                    Math.round(workers.length * 0.63),
-                    Math.round(workers.length * 1),
-                    Math.round(workers.length * 0.75),
-                    Math.round(workers.length * 0.5),
-                ],
+                data: weeklyAttendance.presentCounts,
                 backgroundColor: 'rgba(34, 197, 94, 0.8)',
                 borderRadius: 6,
             },
             {
                 label: 'Absent',
-                data: [
-                    Math.round(workers.length * 0.25),
-                    Math.round(workers.length * 0.12),
-                    Math.round(workers.length * 0.37),
-                    0,
-                    Math.round(workers.length * 0.25),
-                    Math.round(workers.length * 0.5),
-                ],
+                data: weeklyAttendance.absentCounts,
                 backgroundColor: 'rgba(239, 68, 68, 0.8)',
                 borderRadius: 6,
             },
@@ -97,17 +85,15 @@ const ReportsPage = () => {
     };
 
     const progressChartData = {
-        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-        datasets: projects.slice(0, 3).map((project, idx) => ({
-            label: project.name.split(' ').slice(0, 2).join(' '),
-            data: Array.from({ length: 6 }, (_, i) =>
-                Math.min(project.progress, ((i + 1) * (project.progress / 6))).toFixed(0)
-            ),
-            borderColor: ['#E8651A', '#3B82F6', '#22C55E'][idx],
-            backgroundColor: ['rgba(232, 101, 26, 0.1)', 'rgba(59, 130, 246, 0.1)', 'rgba(34, 197, 94, 0.1)'][idx],
-            tension: 0.4,
-            fill: true,
-        })),
+        labels: projects.map((p) => p.name.split(' ').slice(0, 3).join(' ')),
+        datasets: [
+            {
+                label: 'Progress (%)',
+                data: projects.map((p) => p.progress || 0),
+                backgroundColor: projects.map((_, idx) => CHART_COLORS[idx % CHART_COLORS.length]),
+                borderRadius: 6,
+            },
+        ],
     };
 
     const chartOptions = {
@@ -222,7 +208,7 @@ const ReportsPage = () => {
                     <h3><MdTrendingUp className="report-icon" /> Project Progress Trends</h3>
                     <div className="report-chart-container">
                         {projects.length > 0 ? (
-                            <Line data={progressChartData} options={chartOptions} />
+                            <Bar data={progressChartData} options={chartOptions} />
                         ) : (
                             <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No project data available.</div>
                         )}

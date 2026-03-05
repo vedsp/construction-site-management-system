@@ -31,7 +31,11 @@ const ProjectForm = ({ project, onSave, onClose }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
+        onSave({
+            ...formData,
+            budget: formData.budget === '' || formData.budget === undefined ? 0 : Number(formData.budget),
+            progress: formData.progress === '' || formData.progress === undefined ? 0 : Number(formData.progress),
+        });
     };
 
     return (

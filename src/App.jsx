@@ -12,7 +12,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 
 // App Pages
 import DashboardPage from './pages/dashboard/DashboardPage';
-import AttendancePage from './pages/attendance/AttendancePage';
+import AttendancePage from './pages/attendance/WorkAssignmentPage';
 import WorkersPage from './pages/workers/WorkersPage';
 import MaterialsPage from './pages/materials/MaterialsPage';
 import InventoryPage from './pages/materials/InventoryPage';
@@ -21,6 +21,7 @@ import TasksPage from './pages/tasks/TasksPage';
 import InvoicesPage from './pages/invoices/InvoicesPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import WorkerDashboardPage from './pages/worker/WorkerDashboardPage';
+import ContractorDashboardPage from './pages/contractor/ContractorDashboardPage';
 
 // Redirects workers to /worker-dashboard; redirects non-workers away from it
 const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
@@ -48,14 +49,22 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* Management routes — workers are redirected away */}
+            {/* Management routes */}
             <Route path="/dashboard" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo={userRole === 'contractor' ? '/contractor-dashboard' : '/worker-dashboard'}>
                 <DashboardPage />
               </RoleRedirect>
             } />
+
+            {/* Contractor Dashboard */}
+            <Route path="/contractor-dashboard" element={
+              <RoleRedirect allowedRoles={['contractor']} redirectTo="/dashboard">
+                <ContractorDashboardPage />
+              </RoleRedirect>
+            } />
+
             <Route path="/attendance" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo={userRole === 'contractor' ? '/contractor-dashboard' : '/worker-dashboard'}>
                 <AttendancePage />
               </RoleRedirect>
             } />
@@ -65,22 +74,22 @@ function App() {
               </RoleRedirect>
             } />
             <Route path="/materials" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer', 'contractor']} redirectTo="/worker-dashboard">
                 <MaterialsPage />
               </RoleRedirect>
             } />
             <Route path="/inventory" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo={userRole === 'contractor' ? '/contractor-dashboard' : '/worker-dashboard'}>
                 <InventoryPage />
               </RoleRedirect>
             } />
             <Route path="/projects" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo={userRole === 'contractor' ? '/contractor-dashboard' : '/worker-dashboard'}>
                 <ProjectsPage />
               </RoleRedirect>
             } />
             <Route path="/tasks" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer', 'contractor']} redirectTo="/worker-dashboard">
                 <TasksPage />
               </RoleRedirect>
             } />

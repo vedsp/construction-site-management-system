@@ -11,13 +11,23 @@ export const AuthProvider = ({ children }) => {
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const fetchAndSetRole = async (authUser) => {
+        // Always prefer the profiles table as source of truth (matches RLS policies)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', authUser.id)
+            .maybeSingle();
+        setUserRole(profile?.role || authUser.user_metadata?.role || 'admin');
+    };
+
     useEffect(() => {
         if (isSupabaseConfigured()) {
             // Get initial session
             supabase.auth.getSession().then(({ data: { session } }) => {
                 if (session?.user) {
                     setUser(session.user);
-                    setUserRole(session.user.user_metadata?.role || 'admin');
+                    fetchAndSetRole(session.user);
                 }
                 setLoading(false);
             });
@@ -26,7 +36,7 @@ export const AuthProvider = ({ children }) => {
             const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
                 if (session?.user) {
                     setUser(session.user);
-                    setUserRole(session.user.user_metadata?.role || 'admin');
+                    fetchAndSetRole(session.user);
                 } else {
                     setUser(null);
                     setUserRole(null);

@@ -1,0 +1,245 @@
+.wa-page {
+    padding: 24px 32px;
+}
+
+.wa-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 18px;
+    margin-top: 24px;
+}
+
+/* Contractor card */
+.wa-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.wa-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.wa-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+}
+
+.wa-contractor-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.wa-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.wa-name {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wa-trade {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Task items */
+.wa-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.wa-task-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    border-left: 3px solid var(--border-light);
+    background: var(--bg-card);
+}
+
+.wa-task-item.priority-high {
+    border-left-color: var(--danger);
+}
+
+.wa-task-item.priority-medium {
+    border-left-color: var(--warning);
+}
+
+.wa-task-item.priority-low {
+    border-left-color: var(--success);
+}
+
+.wa-task-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.wa-task-icon {
+    color: var(--primary);
+    font-size: 1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.wa-task-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+}
+
+.wa-task-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+}
+
+.wa-task-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.task-priority-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 20px;
+    text-transform: capitalize;
+}
+
+.task-priority-badge.high {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.task-priority-badge.medium {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.task-priority-badge.low {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+/* Status select inline */
+.wa-status-select {
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    padding: 4px 10px;
+    border: 1.5px solid var(--border-light);
+    background: var(--bg-light);
+    cursor: pointer;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    appearance: auto;
+}
+
+.wa-status-select.pending {
+    border-color: var(--warning);
+    color: var(--warning);
+    background: var(--warning-bg);
+}
+
+.wa-status-select.in_progress {
+    border-color: var(--icon-blue);
+    color: var(--icon-blue);
+    background: var(--icon-blue-bg);
+}
+
+.wa-status-select.completed {
+    border-color: var(--success);
+    color: var(--success);
+    background: var(--success-bg);
+}
+
+.wa-done-count {
+    font-size: 0.78rem;
+    color: var(--success);
+    font-weight: 600;
+    margin: 6px 0 0;
+    padding: 6px 10px;
+    background: var(--success-bg);
+    border-radius: 6px;
+}
+
+.wa-empty {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 16px 0 4px;
+    margin: 0;
+}
+
+/* Assignment modal */
+.wa-form {
+    max-width: 480px;
+}
+
+.wa-form-body {
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .wa-page {
+        padding: 16px;
+    }
+
+    .wa-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

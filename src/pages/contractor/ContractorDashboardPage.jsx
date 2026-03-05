@@ -1,0 +1,192 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import StatCard from '../../components/dashboard/StatCard';
+import { getContractorStats, getMaterialRequests, getTasks, createMaterialRequest, getProjects } from '../../services/api';
+import { MdAssignment, MdInventory2, MdFolder, MdAdd } from 'react-icons/md';
+import { toast } from 'react-toastify';
+import MaterialRequestForm from '../../components/materials/MaterialRequestForm';
+
+const ContractorDashboardPage = () => {
+    const { user } = useAuth();
+    const displayName = user?.user_metadata?.full_name || user?.email || 'Contractor';
+
+    const [stats, setStats] = useState({ assignedTasks: 0, myMaterialRequests: 0, activeProjectsCount: 0 });
+    const [recentTasks, setRecentTasks] = useState([]);
+    const [recentRequests, setRecentRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // For Material Request Form
+    const [showMaterialForm, setShowMaterialForm] = useState(false);
+    const [projects, setProjects] = useState([]);
+
+    useEffect(() => {
+        if (!user?.id) return;
+
+        loadDashboardData();
+
+        // Load projects for the material form dropdown
+        getProjects().then(setProjects).catch(console.error);
+    }, [user]);
+
+    const loadDashboardData = async () => {
+        setLoading(true);
+        try {
+            // Wait for all data to load
+            const [fetchedStats, allTasks, allRequests] = await Promise.all([
+                getContractorStats(user.metadata?.full_name || 'Contractor'), // Using full name for now as requested_by is string based in our current schema logic.
+                getTasks(),
+                getMaterialRequests()
+            ]);
+
+            // We only want projects where this contractor has tasks
+            const activeTasks = allTasks.filter(t => t.assigned_to === user.user_metadata?.full_name && t.status !== 'completed');
+
+            // Extract unique project IDs from active tasks to count "Active Projects"
+            const uniqueProjectIds = new Set(activeTasks.map(t => t.project_id).filter(Boolean));
+
+            setStats({
+                ...fetchedStats,
+                activeProjectsCount: uniqueProjectIds.size
+            });
+
+            // Set lists for the UI tables
+            setRecentTasks(activeTasks.slice(0, 5));
+
+            // Material requests made by this contractor
+            setRecentRequests(
+                allRequests
+                    .filter(req => req.requested_by === (user.user_metadata?.full_name || 'Contractor'))
+                    .slice(0, 5)
+            );
+
+        } catch (e) {
+            toast.error('Failed to load dashboard data: ' + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreateMaterialRequest = async (requestData) => {
+        try {
+            await createMaterialRequest(requestData);
+            setShowMaterialForm(false);
+            toast.success('Material request submitted successfully!');
+            loadDashboardData(); // Refresh UI
+        } catch (error) {
+            toast.error('Error creating request: ' + error.message);
+        }
+    };
+
+    return (
+        <div className="dashboard-page" style={{ padding: '24px' }}>
+            <div className="dashboard-welcome" style={{ marginBottom: '32px' }}>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
+                    Welcome back, {displayName}!
+                </h1>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>Here's an overview of your work and requests.</p>
+            </div>
+
+            <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                <StatCard
+                    label="Assigned Tasks"
+                    value={loading ? '…' : stats.assignedTasks}
+                    subtitle="In Progress & Pending"
+                    icon={MdAssignment}
+                    iconBg="var(--icon-blue-bg)"
+                    iconColor="var(--icon-blue)"
+                />
+                <StatCard
+                    label="My Material Requests"
+                    value={loading ? '…' : stats.myMaterialRequests}
+                    subtitle="Total active requests"
+                    icon={MdInventory2}
+                    iconBg="var(--icon-orange-bg)"
+                    iconColor="var(--icon-orange)"
+                />
+                <StatCard
+                    label="Active Projects"
+                    value={loading ? '…' : stats.activeProjectsCount}
+                    subtitle="Projects you're assigned to"
+                    icon={MdFolder}
+                    iconBg="var(--icon-green-bg)"
+                    iconColor="var(--icon-green)"
+                />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                <button className="btn btn-primary" onClick={() => setShowMaterialForm(true)}>
+                    <MdAdd /> Request Material
+                </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+
+                {/* Active Tasks Widget */}
+                <div className="card" style={{ padding: '24px', borderRadius: '12px', background: 'var(--bg-primary)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                        Your Active Tasks
+                    </h3>
+
+                    {loading ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading tasks...</p>
+                    ) : recentTasks.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>No active tasks assigned entirely to you right now.</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {recentTasks.map(task => (
+                                <div key={task.id} style={{ padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <p style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '0.9rem' }}>{task.name}</p>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Deadline: {new Date(task.deadline).toLocaleDateString('en-IN')}</p>
+                                    </div>
+                                    <span className={`badge ${task.status === 'in_progress' ? 'badge-warning' : 'badge-secondary'}`}>
+                                        {task.status.replace('_', ' ')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Recent Material Requests Widget */}
+                <div className="card" style={{ padding: '24px', borderRadius: '12px', background: 'var(--bg-primary)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                        Recent Material Requests
+                    </h3>
+
+                    {loading ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading requests...</p>
+                    ) : recentRequests.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>You haven't requested any materials recently.</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {recentRequests.map(req => (
+                                <div key={req.id} style={{ padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <p style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '0.9rem' }}>{req.project?.name || 'Unknown Project'}</p>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(req.date).toLocaleDateString('en-IN')} • {req.items?.length || 0} items</p>
+                                    </div>
+                                    <span className={`badge ${req.status === 'approved' ? 'badge-success' : req.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`}>
+                                        {req.status.replace('_', ' ')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+            </div>
+
+            {/* Material Request Modal */}
+            {showMaterialForm && (
+                <MaterialRequestForm
+                    projects={projects}
+                    onSave={handleCreateMaterialRequest}
+                    onClose={() => setShowMaterialForm(false)}
+                />
+            )}
+        </div>
+    );
+};
+
+export default ContractorDashboardPage;

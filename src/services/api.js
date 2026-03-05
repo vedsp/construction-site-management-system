@@ -154,6 +154,43 @@ export async function getWeeklyWages() {
     return { map, weekStart: weekStartStr, weekEnd: weekEndStr };
 }
 
+export async function getWeeklyAttendanceByDay() {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun
+    const diffToMon = (day === 0 ? -6 : 1 - day);
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + diffToMon);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekStartStr = weekStart.toISOString().split('T')[0];
+    const weekEndStr = now.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('date, status')
+        .gte('date', weekStartStr)
+        .lte('date', weekEndStr);
+    if (error) throw error;
+
+    // Build Mon–Sat date labels for this week
+    const days = [];
+    for (let i = 0; i < 6; i++) {
+        const d = new Date(weekStart);
+        d.setDate(weekStart.getDate() + i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const presentCounts = days.map((dateStr) =>
+        (data || []).filter((r) => r.date === dateStr && r.status === 'present').length
+    );
+    const absentCounts = days.map((dateStr) =>
+        (data || []).filter((r) => r.date === dateStr && r.status === 'absent').length
+    );
+
+    return { labels, presentCounts, absentCounts };
+}
+
+
 export async function settleWages({ workerId, periodStart, periodEnd, daysPresent, totalAmount, settledBy }) {
     const { data, error } = await supabase
         .from('wage_settlements')
@@ -223,17 +260,17 @@ export async function createMaterialRequest(request, items) {
     return reqData;
 }
 
-export async function updateMaterialRequestStatus(id, status, approvedBy) {
+export async function updateMaterialRequestStatus(id, status, approvedBy, reviewedBy) {
     const updates = { status };
+    // Site engineer initial review
+    if (reviewedBy) updates.reviewed_by = reviewedBy;
+    // Admin final approval/rejection
     if (approvedBy) updates.approved_by = approvedBy;
-    const { data, error } = await supabase
+    const { error } = await supabase
         .from('material_requests')
         .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
     if (error) throw error;
-    return data;
 }
 
 // ─── TASKS ────────────────────────────────────────────────────────────────────
@@ -329,8 +366,17 @@ export async function markAllNotificationsRead(userId) {
 
 // ─── DASHBOARD AGGREGATES ────────────────────────────────────────────────────
 
-export async function getDashboardStats() {
+export async function getDashboardStats(role) {
     const today = new Date().toISOString().split('T')[0];
+
+    // Admin sees requests that need their final approval (engineer_approved)
+    // Site engineer sees requests awaiting their initial review (pending)
+    // Others: total of both
+    const pendingStatus = role === 'admin'
+        ? 'engineer_approved'
+        : role === 'site_engineer'
+            ? 'pending'
+            : 'pending';
 
     const [projects, attendance, pendingRequests, tasks] = await Promise.all([
         supabase
@@ -345,7 +391,7 @@ export async function getDashboardStats() {
         supabase
             .from('material_requests')
             .select('id', { count: 'exact', head: true })
-            .eq('status', 'pending'),
+            .eq('status', pendingStatus),
         supabase
             .from('tasks')
             .select('id', { count: 'exact', head: true })
@@ -357,6 +403,25 @@ export async function getDashboardStats() {
         todayAttendance: attendance.count ?? 0,
         pendingApprovals: pendingRequests.count ?? 0,
         activeTasks: tasks.count ?? 0,
+    };
+}
+
+export async function getContractorStats(userName) {
+    const [tasks, materialRequests] = await Promise.all([
+        supabase
+            .from('tasks')
+            .select('id', { count: 'exact', head: true })
+            .eq('assigned_to', userName)
+            .in('status', ['Pending', 'In Progress']),
+        supabase
+            .from('material_requests')
+            .select('id', { count: 'exact', head: true })
+            .eq('requested_by', userName)
+    ]);
+
+    return {
+        assignedTasks: tasks.count ?? 0,
+        myMaterialRequests: materialRequests.count ?? 0,
     };
 }
 

@@ -51,7 +51,7 @@ CREATE TABLE projects (
   budget NUMERIC(15,2) DEFAULT 0,
   start_date DATE,
   deadline DATE,
-  created_by UUID REFERENCES profiles(id),
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -96,7 +96,7 @@ CREATE TABLE attendance (
   check_in TIME,
   check_out TIME,
   notes TEXT,
-  marked_by UUID REFERENCES profiles(id),
+  marked_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(worker_id, date)
 );
@@ -123,11 +123,12 @@ CREATE TABLE material_requests (
   project_id UUID REFERENCES projects(id),
   requested_by TEXT NOT NULL,
   date DATE DEFAULT CURRENT_DATE,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'engineer_approved', 'engineer_rejected', 'approved', 'rejected')),
   estimated_cost NUMERIC(15,2) DEFAULT 0,
   required_by DATE,
   remarks TEXT,
-  approved_by UUID REFERENCES profiles(id),
+  reviewed_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  approved_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -159,7 +160,7 @@ CREATE TABLE tasks (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
   priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
   deadline DATE,
-  created_by UUID REFERENCES profiles(id),
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -179,7 +180,7 @@ CREATE TABLE invoices (
   gst_amount NUMERIC(15,2) DEFAULT 0,
   total_amount NUMERIC(15,2) DEFAULT 0,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue')),
-  created_by UUID REFERENCES profiles(id),
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -201,7 +202,7 @@ CREATE TABLE invoice_items (
 CREATE TABLE daily_progress_reports (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   project_id UUID REFERENCES projects(id),
-  engineer_id UUID REFERENCES profiles(id),
+  engineer_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   date DATE DEFAULT CURRENT_DATE,
   summary TEXT,
   work_done TEXT,
