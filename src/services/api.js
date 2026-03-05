@@ -22,13 +22,20 @@ export async function createProject(project) {
 }
 
 export async function updateProject(id, updates) {
-    const { data, error } = await supabase
+    // Step 1: perform the update
+    const { error } = await supabase
         .from('projects')
         .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
     if (error) throw error;
+
+    // Step 2: fetch the updated row separately (avoids RLS select-after-update issues)
+    const { data, error: fetchError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+    if (fetchError) throw fetchError;
     return data;
 }
 

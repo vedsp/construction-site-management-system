@@ -16,7 +16,7 @@ const ProjectForm = ({ project, onSave, onClose }) => {
                 client: project.client || '',
                 description: project.description || '',
                 status: project.status || 'not_started',
-                progress: project.progress || 0,
+                progress: project.progress ?? 0,
                 budget: project.budget || '',
                 start_date: project.start_date || '',
                 deadline: project.deadline || '',
@@ -90,8 +90,27 @@ const ProjectForm = ({ project, onSave, onClose }) => {
                         </div>
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Progress ({formData.progress}%)</label>
-                        <input type="range" name="progress" min="0" max="100" value={formData.progress} onChange={handleChange} style={{ width: '100%' }} />
+                        <label className="form-label">Completion Progress</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <input
+                                type="range"
+                                name="progress"
+                                min="0" max="100"
+                                value={formData.progress}
+                                onChange={handleChange}
+                                style={{ flex: 1 }}
+                            />
+                            <input
+                                type="number"
+                                name="progress"
+                                min="0" max="100"
+                                value={formData.progress}
+                                onChange={handleChange}
+                                className="form-input"
+                                style={{ width: '72px', textAlign: 'center' }}
+                            />
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>%</span>
+                        </div>
                     </div>
                     <div className="modal-actions">
                         <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>

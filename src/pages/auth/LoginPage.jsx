@@ -70,8 +70,7 @@ const LoginPage = () => {
                                 autoComplete="email"
                             />
                         </div>
-                    </div>
-
+                    </div>a
                     <div className="form-group">
                         <label className="form-label">
                             Password <span className="required">*</span>

@@ -28,6 +28,11 @@ const WorkerForm = ({ worker, projects = [], onSave, onClose }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        if (name === 'phone') {
+            const digits = value.replace(/\D/g, '').slice(0, 10);
+            setFormData((prev) => ({ ...prev, phone: digits }));
+            return;
+        }
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -66,7 +71,7 @@ const WorkerForm = ({ worker, projects = [], onSave, onClose }) => {
                     </div>
                     <div className="form-group">
                         <label className="form-label">Phone</label>
-                        <input className="form-input" name="phone" value={formData.phone} onChange={handleChange} placeholder="Enter phone number" />
+                        <input className="form-input" name="phone" value={formData.phone} onChange={handleChange} placeholder="Enter 10-digit phone number" maxLength={10} type="tel" pattern="[0-9]{10}" title="Enter a valid 10-digit phone number" />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Assigned Project</label>
