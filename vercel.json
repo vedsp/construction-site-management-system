@@ -1,8 +1,8 @@
 {
     "rewrites": [
         {
-            "source": "/login",
-            "destination": "/pages/auth/LoginPage"
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }
