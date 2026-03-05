@@ -4,7 +4,8 @@ const STATIC_ASSETS = [
   '/index.html',
   '/offline.html',
   '/manifest.json',
-  '/icons/icon.png'
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
 // Install event - cache static assets
@@ -95,8 +96,8 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New notification',
-    icon: '/icons/icon.png',
-    badge: '/icons/icon.png',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
