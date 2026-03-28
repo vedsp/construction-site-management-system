@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getWorkers, getProjects, getTasks, createTask, updateTaskStatus } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 import {
     MdAssignment, MdAdd, MdCheckCircle, MdHourglassEmpty,
     MdPending, MdClose, MdPerson
@@ -15,6 +16,7 @@ const STATUS_MAP = {
 };
 
 const WorkAssignmentPage = () => {
+    const { t } = useTranslation();
     const [workers, setWorkers] = useState([]);
     const [projects, setProjects] = useState([]);
     const [tasks, setTasks] = useState([]); // all tasks assigned to workers
@@ -91,8 +93,8 @@ const WorkAssignmentPage = () => {
         <div className="wa-page">
             <div className="page-header-row">
                 <div className="page-header">
-                    <h1>Work Assignments</h1>
-                    <p>Assign and track work for each contractor on site</p>
+                    <h1>{t('work_assignment.title')}</h1>
+                    <p>{t('work_assignment.subtitle')}</p>
                 </div>
             </div>
 
@@ -100,29 +102,29 @@ const WorkAssignmentPage = () => {
             <div className="stats-grid">
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Active Contractors</p>
+                        <p className="stat-label">{t('work_assignment.active_contractors')}</p>
                         <h3>{activeWorkers.length}</h3>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Works Assigned</p>
+                        <p className="stat-label">{t('work_assignment.works_assigned')}</p>
                         <h3>{totalAssigned}</h3>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Completed</p>
+                        <p className="stat-label">{t('work_assignment.completed')}</p>
                         <h3>{totalDone}</h3>
                     </div>
                 </div>
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Loading contractors…</div>
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>{t('work_assignment.loading_contractors')}</div>
             ) : activeWorkers.length === 0 ? (
                 <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                    <p>No active contractors found. Add workers from the Workers page first.</p>
+                    <p>{t('work_assignment.no_active_contractors')}</p>
                 </div>
             ) : (
                 <div className="wa-grid">
@@ -142,7 +144,7 @@ const WorkAssignmentPage = () => {
                                         </div>
                                     </div>
                                     <button className="btn btn-primary btn-sm" onClick={() => openForm(worker)}>
-                                        <MdAdd /> Assign Work
+                                        <MdAdd /> {t('work_assignment.assign_work')}
                                     </button>
                                 </div>
 
@@ -170,9 +172,9 @@ const WorkAssignmentPage = () => {
                                                         value={task.status}
                                                         onChange={(e) => handleStatusChange(task.id, e.target.value)}
                                                     >
-                                                        <option value="pending">Pending</option>
-                                                        <option value="in_progress">In Progress</option>
-                                                        <option value="completed">Done</option>
+                                                        <option value="pending">{t('work_assignment.pending')}</option>
+                                                        <option value="in_progress">{t('work_assignment.in_progress')}</option>
+                                                        <option value="completed">{t('work_assignment.done')}</option>
                                                     </select>
                                                 </div>
                                             );
@@ -182,11 +184,11 @@ const WorkAssignmentPage = () => {
 
                                 {/* Completed (collapsed count) */}
                                 {doneTasks.length > 0 && (
-                                    <p className="wa-done-count">✓ {doneTasks.length} work{doneTasks.length > 1 ? 's' : ''} completed</p>
+                                    <p className="wa-done-count">{t('work_assignment.works_completed', { count: doneTasks.length })}</p>
                                 )}
 
                                 {workerTasks.length === 0 && (
-                                    <p className="wa-empty">No work assigned yet. Click "Assign Work" to get started.</p>
+                                    <p className="wa-empty">{t('work_assignment.no_work_assigned')}</p>
                                 )}
                             </div>
                         );
@@ -200,14 +202,14 @@ const WorkAssignmentPage = () => {
                     <div className="modal-content wa-form" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <div>
-                                <h2>Assign Work</h2>
-                                <p>To: <strong>{selectedWorker.name}</strong> ({selectedWorker.role})</p>
+                                <h2>{t('work_assignment.assign_work')}</h2>
+                                <p>{t('work_assignment.to_worker', { name: selectedWorker.name, role: selectedWorker.role })}</p>
                             </div>
                             <button className="modal-close" onClick={() => setFormOpen(false)}><MdClose /></button>
                         </div>
                         <form onSubmit={handleAssign} className="wa-form-body">
                             <div className="form-group">
-                                <label className="form-label">Work Title *</label>
+                                <label className="form-label">{t('work_assignment.work_title')} *</label>
                                 <input
                                     className="form-input"
                                     placeholder="e.g. Lay foundation concrete for Block A"
@@ -217,7 +219,7 @@ const WorkAssignmentPage = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Description</label>
+                                <label className="form-label">{t('work_assignment.description')}</label>
                                 <textarea
                                     className="form-input"
                                     rows={2}
@@ -228,7 +230,7 @@ const WorkAssignmentPage = () => {
                             </div>
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label className="form-label">Project</label>
+                                    <label className="form-label">{t('work_assignment.project')}</label>
                                     <select
                                         className="form-select"
                                         value={form.project_id}
@@ -239,7 +241,7 @@ const WorkAssignmentPage = () => {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Priority</label>
+                                    <label className="form-label">{t('work_assignment.priority')}</label>
                                     <select
                                         className="form-select"
                                         value={form.priority}
@@ -250,7 +252,7 @@ const WorkAssignmentPage = () => {
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Due Date</label>
+                                <label className="form-label">{t('work_assignment.due_date')}</label>
                                 <input
                                     className="form-input"
                                     type="date"
@@ -259,9 +261,9 @@ const WorkAssignmentPage = () => {
                                 />
                             </div>
                             <div className="form-actions">
-                                <button type="button" className="btn btn-outline" onClick={() => setFormOpen(false)}>Cancel</button>
+                                <button type="button" className="btn btn-outline" onClick={() => setFormOpen(false)}>{t('common.cancel')}</button>
                                 <button type="submit" className="btn btn-primary" disabled={submitting}>
-                                    {submitting ? 'Assigning…' : 'Assign Work'}
+                                    {submitting ? t('work_assignment.assigning') : t('work_assignment.assign_work')}
                                 </button>
                             </div>
                         </form>

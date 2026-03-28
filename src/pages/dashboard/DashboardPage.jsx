@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import StatCard from '../../components/dashboard/StatCard';
 import QuickActions from '../../components/dashboard/QuickActions';
 import ActiveProjects from '../../components/dashboard/ActiveProjects';
@@ -11,7 +12,8 @@ import './DashboardPage.css';
 
 const DashboardPage = () => {
     const { user, userRole } = useAuth();
-    const displayName = user?.user_metadata?.full_name || user?.email || 'Project Manager';
+    const { t } = useTranslation();
+    const displayName = user?.user_metadata?.full_name || user?.email || t('roles.admin');
 
     const [stats, setStats] = useState({ activeProjects: 0, todayAttendance: 0, pendingApprovals: 0, activeTasks: 0 });
     const [engineers, setEngineers] = useState([]);
@@ -90,44 +92,44 @@ const DashboardPage = () => {
     return (
         <div className="dashboard-page">
             <div className="dashboard-welcome">
-                <h1>Welcome back, {displayName}!</h1>
-                <p>Here's what's happening with your projects today.</p>
+                <h1>{t('dashboard.welcome', { name: displayName })}</h1>
+                <p>{t('dashboard.subtitle')}</p>
                 <div className="dashboard-status">
                     <span className="status-connected">
-                        <span className="status-dot"></span> Connected
+                        <span className="status-dot"></span> {t('common.connected')}
                     </span>
                 </div>
             </div>
 
             <div className="stats-grid">
                 <StatCard
-                    label="Active Projects"
+                    label={t('dashboard.active_projects')}
                     value={loadingStats ? '…' : stats.activeProjects}
-                    subtitle={`${stats.activeProjects} ongoing`}
+                    subtitle={t('dashboard.ongoing', { count: stats.activeProjects })}
                     icon={MdFolder}
                     iconBg="var(--icon-blue-bg)"
                     iconColor="var(--icon-blue)"
                 />
                 <StatCard
-                    label="Today's Attendance"
+                    label={t('dashboard.todays_attendance')}
                     value={loadingStats ? '…' : stats.todayAttendance}
-                    subtitle="Checked in today"
+                    subtitle={t('dashboard.checked_in')}
                     icon={MdAccessTime}
                     iconBg="var(--icon-orange-bg)"
                     iconColor="var(--icon-orange)"
                 />
                 <StatCard
-                    label={userRole === 'admin' ? 'Awaiting Final Approval' : userRole === 'site_engineer' ? 'Pending Review' : 'Pending Approvals'}
+                    label={userRole === 'admin' ? t('dashboard.awaiting_final_approval') : userRole === 'site_engineer' ? t('dashboard.pending_review') : t('dashboard.pending_approvals')}
                     value={loadingStats ? '…' : stats.pendingApprovals}
-                    subtitle={userRole === 'admin' ? 'Forwarded by engineers' : userRole === 'site_engineer' ? 'Needs your review' : 'Needs attention'}
+                    subtitle={userRole === 'admin' ? t('dashboard.forwarded_by_engineers') : userRole === 'site_engineer' ? t('dashboard.needs_your_review') : t('dashboard.needs_attention')}
                     icon={MdWarning}
                     iconBg="var(--warning-bg)"
                     iconColor="var(--warning)"
                 />
                 <StatCard
-                    label="Tasks In Progress"
+                    label={t('dashboard.tasks_in_progress')}
                     value={loadingStats ? '…' : stats.activeTasks}
-                    subtitle={`${stats.activeTasks} active tasks`}
+                    subtitle={t('dashboard.active_tasks', { count: stats.activeTasks })}
                     icon={MdCheckCircle}
                     iconBg="var(--icon-green-bg)"
                     iconColor="var(--icon-green)"
@@ -140,14 +142,14 @@ const DashboardPage = () => {
             {(userRole === 'admin' || userRole === 'site_engineer') && pendingRequests.length > 0 && (
                 <div className="card" style={{ marginTop: 0 }}>
                     <h3 style={{ marginBottom: 12, fontSize: '1rem', fontWeight: 600 }}>
-                        {userRole === 'admin' ? '🔔 Requests Awaiting Final Approval' : '🔔 Requests Awaiting Your Review'}
+                        {userRole === 'admin' ? t('dashboard.requests_awaiting_approval') : t('dashboard.requests_awaiting_review')}
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {pendingRequests.slice(0, 5).map((req) => (
                             <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-secondary)' }}>
                                 <div>
-                                    <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>{req.project?.name || 'Unknown Project'}</p>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Requested by {req.requested_by} • {req.date ? new Date(req.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</p>
+                                    <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>{req.project?.name || t('common.unknown')}</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{t('dashboard.requested_by', { name: req.requested_by })} • {req.date ? new Date(req.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: 8 }}>
                                     <button
@@ -162,7 +164,7 @@ const DashboardPage = () => {
                                             } catch (e) { toast.error('Error: ' + e.message); }
                                         }}
                                     >
-                                        <MdCheckCircle /> {userRole === 'admin' ? 'Approve' : 'Forward'}
+                                        <MdCheckCircle /> {userRole === 'admin' ? t('common.approve') : t('common.forward')}
                                     </button>
                                     <button
                                         className="btn btn-danger btn-sm"
@@ -176,7 +178,7 @@ const DashboardPage = () => {
                                             } catch (e) { toast.error('Error: ' + e.message); }
                                         }}
                                     >
-                                        <MdCancel /> Reject
+                                        <MdCancel /> {t('common.reject')}
                                     </button>
                                 </div>
                             </div>
@@ -189,15 +191,15 @@ const DashboardPage = () => {
                 <div className="dashboard-petty-cash">
                     <div className="petty-cash-header">
                         <MdAccountBalanceWallet className="pc-icon" />
-                        <h3>Manage Petty Cash</h3>
+                        <h3>{t('dashboard.manage_petty_cash')}</h3>
                     </div>
-                    <p className="petty-cash-sub">Select Site Engineer</p>
+                    <p className="petty-cash-sub">{t('dashboard.select_site_engineer')}</p>
                     <select
                         className="form-select"
                         value={selectedEngineerId}
                         onChange={(e) => handleEngineerSelect(e.target.value)}
                     >
-                        <option value="">-- Select Site Engineer --</option>
+                        <option value="">{t('dashboard.select_engineer_option')}</option>
                         {engineers.map((eng) => (
                             <option key={eng.id} value={eng.id}>{eng.full_name}</option>
                         ))}
@@ -206,7 +208,7 @@ const DashboardPage = () => {
                     {selectedEngineerId && (
                         <div style={{ marginTop: '16px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Current Balance</span>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('dashboard.current_balance')}</span>
                                 <span style={{ fontSize: '1.25rem', fontWeight: 700, color: pcBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                                     ₹{Math.abs(pcBalance).toLocaleString('en-IN')}
                                 </span>
@@ -215,7 +217,7 @@ const DashboardPage = () => {
                                 <input
                                     className="form-input"
                                     type="number"
-                                    placeholder="Amount (₹)"
+                                    placeholder={t('dashboard.amount_placeholder')}
                                     value={pcAmount}
                                     onChange={(e) => setPcAmount(e.target.value)}
                                     min="1"
@@ -223,7 +225,7 @@ const DashboardPage = () => {
                                 <input
                                     className="form-input"
                                     type="text"
-                                    placeholder="Description (optional)"
+                                    placeholder={t('dashboard.description_placeholder')}
                                     value={pcDescription}
                                     onChange={(e) => setPcDescription(e.target.value)}
                                 />
@@ -235,7 +237,7 @@ const DashboardPage = () => {
                                     onClick={() => handlePcAction('credit')}
                                     disabled={pcSubmitting}
                                 >
-                                    <MdArrowUpward /> Allocate Funds
+                                    <MdArrowUpward /> {t('dashboard.allocate_funds')}
                                 </button>
                                 <button
                                     className="btn btn-danger btn-sm"
@@ -243,18 +245,18 @@ const DashboardPage = () => {
                                     onClick={() => handlePcAction('debit')}
                                     disabled={pcSubmitting}
                                 >
-                                    <MdArrowDownward /> Record Expense
+                                    <MdArrowDownward /> {t('dashboard.record_expense')}
                                 </button>
                             </div>
 
                             {pcTransactions.length > 0 && (
                                 <div>
-                                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Recent Transactions</p>
+                                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>{t('dashboard.recent_transactions')}</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
                                         {pcTransactions.map((tx) => (
                                             <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: '8px', background: tx.type === 'credit' ? 'var(--success-bg)' : 'var(--danger-bg)' }}>
                                                 <div>
-                                                    <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{tx.description || (tx.type === 'credit' ? 'Funds Allocated' : 'Expense')}</p>
+                                                    <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{tx.description || (tx.type === 'credit' ? t('dashboard.funds_allocated') : t('dashboard.expense'))}</p>
                                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{new Date(tx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                                                 </div>
                                                 <span style={{ fontWeight: 700, color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)' }}>
@@ -266,7 +268,7 @@ const DashboardPage = () => {
                                 </div>
                             )}
                             {pcTransactions.length === 0 && (
-                                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>No transactions yet.</p>
+                                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>{t('dashboard.no_transactions')}</p>
                             )}
                         </div>
                     )}

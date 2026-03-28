@@ -22,6 +22,7 @@ import InvoicesPage from './pages/invoices/InvoicesPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import WorkerDashboardPage from './pages/worker/WorkerDashboardPage';
 import ContractorDashboardPage from './pages/contractor/ContractorDashboardPage';
+import UserApprovalsPage from './pages/admin/UserApprovalsPage';
 
 // Redirects workers to /worker-dashboard; redirects non-workers away from it
 const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
@@ -101,6 +102,11 @@ function App() {
             <Route path="/reports" element={
               <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
                 <ReportsPage />
+              </RoleRedirect>
+            } />
+            <Route path="/user-approvals" element={
+              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
+                <UserApprovalsPage />
               </RoleRedirect>
             } />
 

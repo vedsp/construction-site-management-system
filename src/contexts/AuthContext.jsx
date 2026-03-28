@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         // Always prefer the profiles table as source of truth (matches RLS policies)
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, is_approved')
             .eq('id', authUser.id)
             .maybeSingle();
         setUserRole(profile?.role || authUser.user_metadata?.role || 'admin');
@@ -24,10 +24,24 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         if (isSupabaseConfigured()) {
             // Get initial session
-            supabase.auth.getSession().then(({ data: { session } }) => {
+            supabase.auth.getSession().then(async ({ data: { session } }) => {
                 if (session?.user) {
-                    setUser(session.user);
-                    fetchAndSetRole(session.user);
+                    // Check approval status before setting user
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('role, is_approved')
+                        .eq('id', session.user.id)
+                        .maybeSingle();
+
+                    if (profile && !profile.is_approved) {
+                        // User is not approved, sign them out
+                        await supabase.auth.signOut();
+                        setUser(null);
+                        setUserRole(null);
+                    } else {
+                        setUser(session.user);
+                        setUserRole(profile?.role || session.user.user_metadata?.role || 'admin');
+                    }
                 }
                 setLoading(false);
             });
@@ -61,6 +75,20 @@ export const AuthProvider = ({ children }) => {
         if (isSupabaseConfigured()) {
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
+
+            // Check if user is approved
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role, is_approved')
+                .eq('id', data.user.id)
+                .maybeSingle();
+
+            if (profile && !profile.is_approved) {
+                // Sign them out immediately
+                await supabase.auth.signOut();
+                throw new Error('Your account is pending admin approval. Please wait for an admin to approve your account.');
+            }
+
             return data;
         } else {
             // Demo login
@@ -86,17 +114,30 @@ export const AuthProvider = ({ children }) => {
                 },
             });
             if (error) throw error;
+
+            // Explicitly create the profile row (trigger may fail silently)
+            if (data?.user?.id) {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: data.user.id,
+                        full_name: fullName,
+                        role: role,
+                        is_approved: false,
+                    }, { onConflict: 'id' });
+
+                if (profileError) {
+                    console.error('Profile creation error:', profileError);
+                }
+            }
+
+            // Sign out immediately — user must wait for admin approval
+            await supabase.auth.signOut();
+
             return data;
         } else {
-            const user = {
-                ...demoUser,
-                email,
-                user_metadata: { full_name: fullName, role },
-            };
-            localStorage.setItem('csms_demo_user', JSON.stringify(user));
-            setUser(user);
-            setUserRole(role);
-            return { user };
+            // Demo mode — just show success
+            return { user: { email, user_metadata: { full_name: fullName, role } } };
         }
     };
 

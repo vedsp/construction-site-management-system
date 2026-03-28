@@ -277,3 +277,23 @@
     background: var(--success-bg);
     color: var(--success);
 }
+
+/* ── Profile-sourced worker card ────── */
+.worker-card-profile {
+    border-color: var(--primary-light, #f97316);
+    border-style: dashed;
+}
+
+.profile-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: rgba(249, 115, 22, 0.12);
+    color: var(--primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}

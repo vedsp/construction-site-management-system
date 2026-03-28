@@ -1,5 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import nirmanLogo from '../../assets/nirman-logo.png';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import {
     MdDashboard,
     MdAccessTime,
@@ -15,28 +17,28 @@ import {
     MdClose,
     MdPerson,
     MdAssignment,
+    MdHowToReg,
 } from 'react-icons/md';
 import './Sidebar.css';
 
-const ALL_ROLES = ['admin', 'site_engineer', 'worker'];
-const MGMT_ROLES = ['admin', 'site_engineer'];
-
 const navItems = [
-    { path: '/dashboard', label: 'Management Dashboard', icon: MdDashboard, roles: ['admin', 'site_engineer'] },
-    { path: '/contractor-dashboard', label: 'Dashboard', icon: MdDashboard, roles: ['contractor'] },
-    { path: '/attendance', label: 'Work Assignment', icon: MdAssignment, roles: ['admin', 'site_engineer'] },
-    { path: '/workers', label: 'Workers', icon: MdPeople, roles: ['admin'] },
-    { path: '/materials', label: 'Materials', icon: MdInventory2, roles: ['admin', 'site_engineer', 'contractor'] },
-    { path: '/projects', label: 'Projects', icon: MdFolder, roles: ['admin', 'site_engineer'] },
-    { path: '/tasks', label: 'Tasks', icon: MdAssignment, roles: ['admin', 'site_engineer', 'contractor'] },
-    { path: '/invoices', label: 'Invoices', icon: MdReceipt, roles: ['admin'] },
-    { path: '/reports', label: 'Reports', icon: MdBarChart, roles: ['admin'] },
+    { path: '/dashboard', labelKey: 'management_dashboard', icon: MdDashboard, roles: ['admin', 'site_engineer'] },
+    { path: '/contractor-dashboard', labelKey: 'dashboard', icon: MdDashboard, roles: ['contractor'] },
+    { path: '/attendance', labelKey: 'work_assignment', icon: MdAssignment, roles: ['admin', 'site_engineer'] },
+    { path: '/workers', labelKey: 'workers', icon: MdPeople, roles: ['admin'] },
+    { path: '/materials', labelKey: 'materials', icon: MdInventory2, roles: ['admin', 'site_engineer', 'contractor'] },
+    { path: '/projects', labelKey: 'projects', icon: MdFolder, roles: ['admin', 'site_engineer'] },
+    { path: '/tasks', labelKey: 'tasks', icon: MdAssignment, roles: ['admin', 'site_engineer', 'contractor'] },
+    { path: '/invoices', labelKey: 'invoices', icon: MdReceipt, roles: ['admin'] },
+    { path: '/reports', labelKey: 'reports', icon: MdBarChart, roles: ['admin'] },
+    { path: '/user-approvals', labelKey: 'user_approvals', icon: MdHowToReg, roles: ['admin'] },
     // Worker-only nav
-    { path: '/worker-dashboard', label: 'My Dashboard', icon: MdDashboard, roles: ['worker'] },
+    { path: '/worker-dashboard', labelKey: 'my_dashboard', icon: MdDashboard, roles: ['worker'] },
 ];
 
 const Sidebar = ({ isOpen, onToggle }) => {
     const { user, userRole, logout } = useAuth();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const role = userRole || 'admin';
     const visibleNavItems = navItems.filter((item) => item.roles.includes(role));
@@ -46,10 +48,14 @@ const Sidebar = ({ isOpen, onToggle }) => {
         navigate('/login');
     };
 
-    const displayName = user?.user_metadata?.full_name || 'Project Manager';
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+    };
+
+    const displayName = user?.user_metadata?.full_name || t('roles.admin');
     const displayRole = userRole
-        ? userRole.charAt(0).toUpperCase() + userRole.slice(1).replace('_', ' ')
-        : 'Admin';
+        ? t(`roles.${userRole}`)
+        : t('roles.admin');
 
     return (
         <>
@@ -60,13 +66,22 @@ const Sidebar = ({ isOpen, onToggle }) => {
             <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <div className="sidebar-brand">
-                        <h1>Construction SMS</h1>
-                        <p>Site Management System</p>
+                        <h1>{t('sidebar.brand')}</h1>
+                        <p>{t('sidebar.tagline')}</p>
                     </div>
                     <div className="sidebar-lang-switcher">
-                        <button className="lang-btn active">GB EN</button>
-                        <button className="lang-btn">IN हि</button>
-                        <button className="lang-btn">IN मर</button>
+                        <button 
+                            className={`lang-btn ${i18n.language === 'en' ? 'active' : ''}`}
+                            onClick={() => changeLanguage('en')}
+                        >GB EN</button>
+                        <button 
+                            className={`lang-btn ${i18n.language === 'hi' ? 'active' : ''}`}
+                            onClick={() => changeLanguage('hi')}
+                        >IN हि</button>
+                        <button 
+                            className={`lang-btn ${i18n.language === 'mr' ? 'active' : ''}`}
+                            onClick={() => changeLanguage('mr')}
+                        >IN मर</button>
                     </div>
                 </div>
 
@@ -91,7 +106,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
                             onClick={() => onToggle && window.innerWidth <= 768 && onToggle()}
                         >
                             <item.icon className="nav-icon" />
-                            <span>{item.label}</span>
+                            <span>{t(`sidebar.${item.labelKey}`)}</span>
                         </NavLink>
                     ))}
                 </nav>
@@ -99,7 +114,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
                 <div className="sidebar-footer">
                     <button className="sidebar-logout-btn" onClick={handleLogout}>
                         <MdLogout className="nav-icon" />
-                        <span>Logout</span>
+                        <span>{t('sidebar.logout')}</span>
                     </button>
                 </div>
             </aside>

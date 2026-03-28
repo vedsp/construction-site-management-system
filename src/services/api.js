@@ -81,6 +81,103 @@ export async function deleteWorker(id) {
     if (error) throw error;
 }
 
+export async function getProfileWorkers() {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'worker')
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    // Normalise shape to match workers table fields
+    return (data || []).map((p) => ({
+        ...p,
+        _source: 'profile',
+        name: p.full_name || p.email || 'Unknown',
+        role: 'worker',
+        status: p.is_approved ? 'active' : 'inactive',
+        daily_wage: null,
+        phone: null,
+        project_id: null,
+        project: null,
+    }));
+}
+
+export async function createWorkerWithAccount({ email, password, name, role, phone, project_id, daily_wage, status }) {
+    // Use a separate Supabase client for sign-up so we don't affect the admin's session
+    const { createClient } = await import('@supabase/supabase-js');
+    const signUpClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        { auth: { storageKey: 'csms-worker-signup-temp', persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+    );
+
+    // Save the admin's current session so we can restore it after signUp
+    const { data: { session: adminSession } } = await supabase.auth.getSession();
+
+    // 1. Sign up in Supabase Auth
+    //    The database may have a trigger (handle_new_user) that auto-inserts into profiles.
+    //    If the trigger fails (e.g. missing column defaults), signUp itself errors with
+    //    "Database error saving new user". To fix this, ensure the trigger sets all
+    //    required columns OR make them nullable with defaults in the profiles table.
+    const { data: signUpData, error: signUpError } = await signUpClient.auth.signUp({
+        email,
+        password,
+        options: {
+            data: { full_name: name, role: 'worker' },
+            emailRedirectTo: window.location.origin + '/login',
+        },
+    });
+
+    if (signUpError) {
+        // Provide a more actionable error message for the common trigger failure
+        if (signUpError.message?.includes('Database error saving new user')) {
+            throw new Error(
+                'Failed to create account. The database trigger on auth.users is failing. ' +
+                'Please update the handle_new_user trigger in Supabase to include all required ' +
+                'profiles columns (is_approved, phone, project_id, daily_wage) with defaults, ' +
+                'or make those columns nullable. Original: ' + signUpError.message
+            );
+        }
+        throw signUpError;
+    }
+
+    const userId = signUpData?.user?.id;
+    if (!userId) throw new Error('Account creation failed — no user ID returned.');
+
+    // Immediately sign out the worker session on the separate client
+    await signUpClient.auth.signOut();
+
+    // Restore the admin's session on the main client so the admin stays logged in
+    if (adminSession) {
+        await supabase.auth.setSession({
+            access_token: adminSession.access_token,
+            refresh_token: adminSession.refresh_token,
+        });
+    }
+
+    // 2. Upsert profile (auto-approve since admin is creating this account)
+    //    This handles the case where the trigger already created a partial row.
+    const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+            id: userId,
+            full_name: name,
+            role: 'worker',
+            is_approved: true,
+        }, { onConflict: 'id' });
+    if (profileError) throw profileError;
+
+    // 3. Insert into workers table
+    const { data: workerData, error: workerError } = await supabase
+        .from('workers')
+        .insert([{ name, role, phone, project_id: project_id || null, daily_wage: daily_wage || null, status: status || 'active' }])
+        .select('*, project:projects(id, name)')
+        .single();
+    if (workerError) throw workerError;
+
+    return workerData;
+}
+
 // ─── ATTENDANCE / ENGINEERS ───────────────────────────────────────────────────
 
 export async function getEngineers() {

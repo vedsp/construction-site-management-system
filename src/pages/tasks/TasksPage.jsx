@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getTasks, getProjects, getWorkers, createTask, updateTaskStatus } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { MdAdd } from 'react-icons/md';
 import TaskForm from '../../components/tasks/TaskForm';
 import { toast } from 'react-toastify';
@@ -8,6 +9,7 @@ import './TasksPage.css';
 
 const TasksPage = () => {
     const { userRole } = useAuth();
+    const { t } = useTranslation();
     const [tasks, setTasks] = useState([]);
     const [projects, setProjects] = useState([]);
     const [workers, setWorkers] = useState([]);
@@ -61,12 +63,12 @@ const TasksPage = () => {
         <div className="tasks-page">
             <div className="page-header-row">
                 <div className="page-header">
-                    <h1>Task Management</h1>
-                    <p>Create, assign and track tasks across projects</p>
+                    <h1>{t('tasks.title')}</h1>
+                    <p>{t('tasks.subtitle')}</p>
                 </div>
                 {userRole === 'admin' && (
                     <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-                        <MdAdd /> Create Task
+                        <MdAdd /> {t('tasks.create_task')}
                     </button>
                 )}
             </div>
@@ -74,25 +76,25 @@ const TasksPage = () => {
             <div className="stats-grid">
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Total Tasks</p>
+                        <p className="stat-label">{t('tasks.total_tasks')}</p>
                         <h3>{tasks.length}</h3>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">In Progress</p>
+                        <p className="stat-label">{t('tasks.in_progress')}</p>
                         <h3>{tasks.filter((t) => t.status === 'in_progress').length}</h3>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Completed</p>
+                        <p className="stat-label">{t('tasks.completed')}</p>
                         <h3>{tasks.filter((t) => t.status === 'completed').length}</h3>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Pending</p>
+                        <p className="stat-label">{t('tasks.pending')}</p>
                         <h3>{tasks.filter((t) => t.status === 'pending').length}</h3>
                     </div>
                 </div>
@@ -105,25 +107,25 @@ const TasksPage = () => {
                         className={`filter-tab ${filter === f ? 'active' : ''}`}
                         onClick={() => setFilter(f)}
                     >
-                        {f === 'in_progress' ? 'In Progress' : f.charAt(0).toUpperCase() + f.slice(1)}
+                        {f === 'in_progress' ? t('tasks.in_progress') : f === 'all' ? t('common.all') : f === 'pending' ? t('tasks.pending') : t('tasks.completed')}
                     </button>
                 ))}
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Loading tasks…</div>
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>{t('tasks.loading')}</div>
             ) : (
                 <div className="tasks-table-wrapper">
                     <div className="tasks-table-scroll">
                         <table className="tasks-table">
                             <thead>
                                 <tr>
-                                    <th>Task</th>
-                                    <th>Project</th>
-                                    <th>Assigned To</th>
-                                    <th>Priority</th>
-                                    <th>Deadline</th>
-                                    <th>Status</th>
+                                    <th>{t('tasks.task')}</th>
+                                    <th>{t('tasks.project')}</th>
+                                    <th>{t('tasks.assigned_to')}</th>
+                                    <th>{t('tasks.priority')}</th>
+                                    <th>{t('tasks.deadline')}</th>
+                                    <th>{t('tasks.status')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -141,13 +143,13 @@ const TasksPage = () => {
                                                     value={task.status}
                                                     onChange={(e) => handleStatusChange(task.id, e.target.value)}
                                                 >
-                                                    <option value="pending">Pending</option>
-                                                    <option value="in_progress">In Progress</option>
-                                                    <option value="completed">Completed</option>
+                                                    <option value="pending">{t('tasks.pending')}</option>
+                                                    <option value="in_progress">{t('tasks.in_progress')}</option>
+                                                    <option value="completed">{t('tasks.completed')}</option>
                                                 </select>
                                             ) : (
                                                 <span className={`badge ${getStatusBadge(task.status)}`}>
-                                                    {task.status === 'in_progress' ? 'In Progress' : task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                                                    {task.status === 'in_progress' ? t('tasks.in_progress') : task.status === 'pending' ? t('tasks.pending') : t('tasks.completed')}
                                                 </span>
                                             )}
                                         </td>
@@ -156,7 +158,7 @@ const TasksPage = () => {
                                 {filtered.length === 0 && (
                                     <tr>
                                         <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                                            No tasks found.
+                                            {t('tasks.no_tasks')}
                                         </td>
                                     </tr>
                                 )}

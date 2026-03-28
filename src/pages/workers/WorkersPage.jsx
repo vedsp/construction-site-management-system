@@ -3,16 +3,20 @@ import {
     getWorkers, getProjects, createWorker, updateWorker, deleteWorker,
     getWorkersAttendanceToday, markWorkerAttendanceAdmin,
     getWeeklyWages, settleWages,
+    getProfileWorkers, createWorkerWithAccount,
 } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { MdPersonAdd, MdEdit, MdDelete, MdCheckCircle, MdCancel, MdPayments } from 'react-icons/md';
+import { useTranslation } from 'react-i18next'; // Added this import
+import { MdPersonAdd, MdEdit, MdDelete, MdCheckCircle, MdCancel, MdPayments, MdAccountCircle, MdAdd } from 'react-icons/md';
 import WorkerForm from '../../components/workers/WorkerForm';
 import { toast } from 'react-toastify';
 import './WorkersPage.css';
 
 const WorkersPage = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const [workers, setWorkers] = useState([]);
+    const [profileWorkers, setProfileWorkers] = useState([]);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -28,18 +32,34 @@ const WorkersPage = () => {
 
     const fetchData = useCallback(() => {
         setLoading(true);
-        Promise.all([getWorkers(), getProjects(), getWorkersAttendanceToday(), getWeeklyWages()])
-            .then(([w, p, att, wages]) => {
+        Promise.all([
+            getWorkers(),
+            getProjects(),
+            getWorkersAttendanceToday(),
+            getWeeklyWages(),
+            getProfileWorkers(),
+        ])
+            .then(([w, p, att, wages, pw]) => {
                 setWorkers(w);
                 setProjects(p);
                 setTodayAttendance(att);
                 setWeeklyWages(wages);
+                // Exclude profile workers that already have a matching workers-table entry
+                // (matched by profile_id field if it exists on the worker row)
+                const workerProfileIds = new Set(w.map(wr => wr.profile_id).filter(Boolean));
+                setProfileWorkers(pw.filter(pw => !workerProfileIds.has(pw.id)));
             })
             .catch((e) => toast.error('Failed to load data: ' + e.message))
             .finally(() => setLoading(false));
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    // Merge workers + profile workers into one list for display
+    const allWorkers = [
+        ...workers,
+        ...profileWorkers.map(pw => ({ ...pw, _source: 'profile' })),
+    ];
 
     const getProjectName = (projectId) => {
         const p = projects.find((p) => p.id === projectId);
@@ -49,11 +69,18 @@ const WorkersPage = () => {
     const handleAdd = () => { setEditWorker(null); setShowForm(true); };
     const handleEdit = (worker) => { setEditWorker(worker); setShowForm(true); };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id, isProfileWorker) => {
         if (!window.confirm('Are you sure you want to delete this worker?')) return;
         try {
-            await deleteWorker(id);
-            setWorkers((prev) => prev.filter((w) => w.id !== id));
+            if (!isProfileWorker) {
+                await deleteWorker(id);
+                setWorkers((prev) => prev.filter((w) => w.id !== id));
+            } else {
+                // Profile worker — remove from displayed list only (can't delete auth users from client)
+                setProfileWorkers((prev) => prev.filter((w) => w.id !== id));
+                toast.info('Worker removed from view. Manage the account via User Approvals.');
+                return;
+            }
             toast.success('Worker deleted.');
         } catch (e) {
             toast.error('Error: ' + e.message);
@@ -63,11 +90,21 @@ const WorkersPage = () => {
     const handleSave = async (workerData) => {
         try {
             if (editWorker) {
-                const updated = await updateWorker(editWorker.id, workerData);
+                // Editing an existing worker row
+                const { email, password, createAccount, ...updateData } = workerData;
+                const updated = await updateWorker(editWorker.id, updateData);
                 setWorkers((prev) => prev.map((w) => w.id === editWorker.id ? updated : w));
                 toast.success('Worker updated!');
+            } else if (workerData.createAccount && workerData.email && workerData.password) {
+                // New worker WITH account creation
+                const { createAccount, confirmPassword, ...accountData } = workerData;
+                const created = await createWorkerWithAccount(accountData);
+                setWorkers((prev) => [created, ...prev]);
+                toast.success('Worker added and account created!');
             } else {
-                const created = await createWorker(workerData);
+                // New worker WITHOUT account
+                const { email, password, createAccount, ...workerOnly } = workerData;
+                const created = await createWorker(workerOnly);
                 setWorkers((prev) => [created, ...prev]);
                 toast.success('Worker added!');
             }
@@ -82,16 +119,8 @@ const WorkersPage = () => {
         try {
             const record = await markWorkerAttendanceAdmin(workerId, status);
             setTodayAttendance((prev) => ({ ...prev, [workerId]: record }));
-            // Update weekly wage count if marking present
-            if (status === 'present') {
-                // Reload wages to reflect today's mark
-                const wages = await getWeeklyWages();
-                setWeeklyWages(wages);
-            } else {
-                // If marking absent, subtract one if today was previously counted
-                const wages = await getWeeklyWages();
-                setWeeklyWages(wages);
-            }
+            const wages = await getWeeklyWages();
+            setWeeklyWages(wages);
             toast.success(`Marked ${status} for today.`);
         } catch (e) {
             toast.error('Error: ' + e.message);
@@ -118,7 +147,6 @@ const WorkersPage = () => {
                 settledBy: user?.id,
             });
             toast.success(`Payment of ₹${totalAmount.toLocaleString('en-IN')} settled for ${worker.name}!`);
-            // Refresh wages
             const wages = await getWeeklyWages();
             setWeeklyWages(wages);
         } catch (e) {
@@ -136,75 +164,92 @@ const WorkersPage = () => {
         <div className="workers-page">
             <div className="page-header-row">
                 <div className="page-header">
-                    <h1>Worker Management</h1>
-                    <p>Manage all workers across your projects</p>
+                    <h1>{t('workers.title')}</h1>
+                    <p>{t('workers.subtitle')}</p>
                 </div>
                 <button className="btn btn-primary" onClick={handleAdd}>
-                    <MdPersonAdd /> Add Worker
+                    <MdAdd /> {t('workers.add_worker')}
                 </button>
             </div>
 
             <div className="stats-grid">
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Total Workers</p>
-                        <h3>{workers.length}</h3>
+                        <p className="stat-label">{t('workers.total_workers')}</p>
+                        <h3>{allWorkers.length}</h3>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Active Workers</p>
-                        <h3>{workers.filter((w) => w.status === 'active').length}</h3>
+                        <p className="stat-label">{t('workers.active_workers')}</p>
+                        <h3>{allWorkers.filter((w) => w.status === 'active').length}</h3>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-card-content">
-                        <p className="stat-label">Present Today</p>
+                        <p className="stat-label">{t('workers.present_today')}</p>
                         <h3>{Object.values(todayAttendance).filter((a) => a.status === 'present').length}</h3>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-content">
+                        <p className="stat-label">{t('workers.registered_accounts')}</p>
+                        <h3>{profileWorkers.length}</h3>
                     </div>
                 </div>
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Loading workers…</div>
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>{t('workers.loading_workers')}</div>
             ) : (
                 <div className="workers-grid">
-                    {workers.map((worker) => {
+                    {allWorkers.map((worker) => {
+                        const isProfileWorker = worker._source === 'profile';
                         const att = todayAttendance[worker.id];
                         const isPresent = att?.status === 'present';
                         const isAbsent = att?.status === 'absent';
                         return (
-                            <div key={worker.id} className="worker-card">
+                            <div key={worker.id} className={`worker-card ${isProfileWorker ? 'worker-card-profile' : ''}`}>
                                 <div className="worker-card-header">
                                     <div className="worker-card-info">
-                                        <div className="worker-card-avatar">{worker.name.charAt(0)}</div>
+                                        <div className="worker-card-avatar">
+                                            {worker.name.charAt(0).toUpperCase()}
+                                        </div>
                                         <div>
                                             <p className="worker-card-name">{worker.name}</p>
                                             <p className="worker-card-role">{worker.role}</p>
                                         </div>
                                     </div>
                                     <div className="worker-card-actions">
-                                        <button onClick={() => handleEdit(worker)} title="Edit"><MdEdit /></button>
-                                        <button className="delete" onClick={() => handleDelete(worker.id)} title="Delete"><MdDelete /></button>
+                                        {isProfileWorker ? (
+                                            <span className="profile-source-badge" title="Registered via app account">
+                                                <MdAccountCircle /> Profile
+                                            </span>
+                                        ) : (
+                                            <button onClick={() => handleEdit(worker)} title="Edit"><MdEdit /></button>
+                                        )}
+                                        <button className="delete" onClick={() => handleDelete(worker.id, isProfileWorker)} title="Delete"><MdDelete /></button>
                                     </div>
                                 </div>
                                 <div className="worker-card-details">
                                     <div className="worker-detail-item">
-                                        <span className="worker-detail-label">Project</span>
+                                        <span className="worker-detail-label">{t('workers.project')}</span>
                                         <span className="worker-detail-value">
-                                            {worker.project?.name || getProjectName(worker.project_id)}
+                                            {worker.project?.name || getProjectName(worker.project_id) || 'Unassigned'}
                                         </span>
                                     </div>
                                     <div className="worker-detail-item">
-                                        <span className="worker-detail-label">Daily Wage</span>
-                                        <span className="worker-detail-value">₹{worker.daily_wage}</span>
+                                        <span className="worker-detail-label">{t('workers.daily_wage')}</span>
+                                        <span className="worker-detail-value">
+                                            {worker.daily_wage ? `₹${worker.daily_wage}` : '—'}
+                                        </span>
                                     </div>
                                     <div className="worker-detail-item">
-                                        <span className="worker-detail-label">Phone</span>
-                                        <span className="worker-detail-value">{worker.phone}</span>
+                                        <span className="worker-detail-label">{t('workers.phone')}</span>
+                                        <span className="worker-detail-value">{worker.phone || '—'}</span>
                                     </div>
                                     <div className="worker-detail-item">
-                                        <span className="worker-detail-label">Status</span>
+                                        <span className="worker-detail-label">{t('workers.status')}</span>
                                         <span className={`badge ${worker.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
                                             {worker.status}
                                         </span>
@@ -239,9 +284,9 @@ const WorkersPage = () => {
                 </div>
             )}
 
-            {workers.length === 0 && !loading && (
+            {allWorkers.length === 0 && !loading && (
                 <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                    <p>No workers yet. Add your first worker!</p>
+                    <p>{t('workers.no_workers')}</p>
                 </div>
             )}
 
@@ -251,7 +296,7 @@ const WorkersPage = () => {
                     <div className="wage-panel-header">
                         <MdPayments className="wage-icon" />
                         <div>
-                            <h2>Weekly Wages</h2>
+                            <h2>{t('workers.weekly_wages')}</h2>
                             <p>Week: {weekLabel}</p>
                         </div>
                     </div>
