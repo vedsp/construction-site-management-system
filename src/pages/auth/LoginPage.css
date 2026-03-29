@@ -156,3 +156,27 @@
     position: relative;
     z-index: 1;
 }
+
+/* Registration Success */
+.registration-success {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.registration-success .success-icon {
+    font-size: 3.5rem;
+    color: #27ae60;
+    margin-bottom: 16px;
+}
+
+.registration-success h2 {
+    color: #27ae60 !important;
+    margin-bottom: 12px !important;
+}
+
+.success-message {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}

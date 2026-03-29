@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import StatCard from '../../components/dashboard/StatCard';
 import { getContractorStats, getMaterialRequests, getTasks, createMaterialRequest, getProjects } from '../../services/api';
 import { MdAssignment, MdInventory2, MdFolder, MdAdd } from 'react-icons/md';
@@ -8,7 +9,8 @@ import MaterialRequestForm from '../../components/materials/MaterialRequestForm'
 
 const ContractorDashboardPage = () => {
     const { user } = useAuth();
-    const displayName = user?.user_metadata?.full_name || user?.email || 'Contractor';
+    const { t } = useTranslation();
+    const displayName = user?.user_metadata?.full_name || user?.email || t('roles.contractor');
 
     const [stats, setStats] = useState({ assignedTasks: 0, myMaterialRequests: 0, activeProjectsCount: 0 });
     const [recentTasks, setRecentTasks] = useState([]);
@@ -81,32 +83,32 @@ const ContractorDashboardPage = () => {
         <div className="dashboard-page" style={{ padding: '24px' }}>
             <div className="dashboard-welcome" style={{ marginBottom: '32px' }}>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-                    Welcome back, {displayName}!
+                    {t('contractor_dashboard.welcome', { name: displayName })}
                 </h1>
-                <p style={{ color: 'var(--text-muted)', margin: 0 }}>Here's an overview of your work and requests.</p>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t('contractor_dashboard.subtitle')}</p>
             </div>
 
             <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
                 <StatCard
-                    label="Assigned Tasks"
+                    label={t('contractor_dashboard.assigned_tasks')}
                     value={loading ? '…' : stats.assignedTasks}
-                    subtitle="In Progress & Pending"
+                    subtitle={t('contractor_dashboard.in_progress_pending')}
                     icon={MdAssignment}
                     iconBg="var(--icon-blue-bg)"
                     iconColor="var(--icon-blue)"
                 />
                 <StatCard
-                    label="My Material Requests"
+                    label={t('contractor_dashboard.my_material_requests')}
                     value={loading ? '…' : stats.myMaterialRequests}
-                    subtitle="Total active requests"
+                    subtitle={t('contractor_dashboard.total_active_requests')}
                     icon={MdInventory2}
                     iconBg="var(--icon-orange-bg)"
                     iconColor="var(--icon-orange)"
                 />
                 <StatCard
-                    label="Active Projects"
+                    label={t('contractor_dashboard.active_projects')}
                     value={loading ? '…' : stats.activeProjectsCount}
-                    subtitle="Projects you're assigned to"
+                    subtitle={t('contractor_dashboard.projects_assigned')}
                     icon={MdFolder}
                     iconBg="var(--icon-green-bg)"
                     iconColor="var(--icon-green)"
@@ -115,7 +117,7 @@ const ContractorDashboardPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
                 <button className="btn btn-primary" onClick={() => setShowMaterialForm(true)}>
-                    <MdAdd /> Request Material
+                    <MdAdd /> {t('contractor_dashboard.request_material')}
                 </button>
             </div>
 
@@ -124,13 +126,13 @@ const ContractorDashboardPage = () => {
                 {/* Active Tasks Widget */}
                 <div className="card" style={{ padding: '24px', borderRadius: '12px', background: 'var(--bg-primary)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-                        Your Active Tasks
+                        {t('contractor_dashboard.your_active_tasks')}
                     </h3>
 
                     {loading ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading tasks...</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('contractor_dashboard.loading_tasks')}</p>
                     ) : recentTasks.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>No active tasks assigned entirely to you right now.</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>{t('contractor_dashboard.no_active_tasks')}</p>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {recentTasks.map(task => (
@@ -151,13 +153,13 @@ const ContractorDashboardPage = () => {
                 {/* Recent Material Requests Widget */}
                 <div className="card" style={{ padding: '24px', borderRadius: '12px', background: 'var(--bg-primary)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-                        Recent Material Requests
+                        {t('contractor_dashboard.recent_material_requests')}
                     </h3>
 
                     {loading ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading requests...</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('contractor_dashboard.loading_requests')}</p>
                     ) : recentRequests.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>You haven't requested any materials recently.</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>{t('contractor_dashboard.no_recent_requests')}</p>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {recentRequests.map(req => (

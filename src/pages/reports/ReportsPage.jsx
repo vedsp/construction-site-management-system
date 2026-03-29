@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { getWorkers, getMaterials, getProjects, getAttendanceToday, getWeeklyAttendanceByDay } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 import { MdPeople, MdInventory2, MdTrendingUp } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import './ReportsPage.css';
@@ -20,6 +21,7 @@ import './ReportsPage.css';
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend);
 
 const ReportsPage = () => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('attendance');
     const [workers, setWorkers] = useState([]);
     const [inventory, setInventory] = useState([]);
@@ -29,9 +31,9 @@ const ReportsPage = () => {
     const [loading, setLoading] = useState(true);
 
     const tabs = [
-        { id: 'attendance', label: 'Attendance Report' },
-        { id: 'material', label: 'Material Usage' },
-        { id: 'progress', label: 'Project Progress' },
+        { id: 'attendance', label: t('reports.attendance_report') },
+        { id: 'material', label: t('reports.material_usage') },
+        { id: 'progress', label: t('reports.project_progress') },
     ];
 
     useEffect(() => {
@@ -116,10 +118,10 @@ const ReportsPage = () => {
         return (
             <div className="reports-page">
                 <div className="page-header">
-                    <h1>Reports & Analytics</h1>
-                    <p>View attendance, material usage, and project progress reports</p>
+                    <h1>{t('reports.title')}</h1>
+                    <p>{t('reports.subtitle')}</p>
                 </div>
-                <div style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>Loading report data…</div>
+                <div style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>{t('reports.loading')}</div>
             </div>
         );
     }
@@ -127,8 +129,8 @@ const ReportsPage = () => {
     return (
         <div className="reports-page">
             <div className="page-header">
-                <h1>Reports & Analytics</h1>
-                <p>View attendance, material usage, and project progress reports</p>
+                <h1>{t('reports.title')}</h1>
+                <p>{t('reports.subtitle')}</p>
             </div>
 
             <div className="filter-tabs">
@@ -145,32 +147,32 @@ const ReportsPage = () => {
 
             {activeTab === 'attendance' && (
                 <div className="report-section">
-                    <h3><MdPeople className="report-icon" /> Weekly Attendance Report</h3>
+                    <h3><MdPeople className="report-icon" /> {t('reports.weekly_attendance')}</h3>
                     <div className="report-chart-container">
                         {workers.length > 0 ? (
                             <Bar data={attendanceChartData} options={chartOptions} />
                         ) : (
-                            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No worker data available.</div>
+                            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>{t('reports.no_worker_data')}</div>
                         )}
                     </div>
                     <div className="report-summary-grid">
                         <div className="report-summary-item">
                             <p className="report-summary-value">{workers.length}</p>
-                            <p className="report-summary-label">Total Workers</p>
+                            <p className="report-summary-label">{t('reports.total_workers')}</p>
                         </div>
                         <div className="report-summary-item">
                             <p className="report-summary-value">{present}</p>
-                            <p className="report-summary-label">Present Today</p>
+                            <p className="report-summary-label">{t('reports.present_today')}</p>
                         </div>
                         <div className="report-summary-item">
                             <p className="report-summary-value">{absent}</p>
-                            <p className="report-summary-label">Absent Today</p>
+                            <p className="report-summary-label">{t('reports.absent_today')}</p>
                         </div>
                         <div className="report-summary-item">
                             <p className="report-summary-value">
                                 {totalAttendance > 0 ? ((present / totalAttendance) * 100).toFixed(0) : '—'}%
                             </p>
-                            <p className="report-summary-label">Attendance Rate</p>
+                            <p className="report-summary-label">{t('reports.attendance_rate')}</p>
                         </div>
                     </div>
                 </div>
@@ -178,26 +180,26 @@ const ReportsPage = () => {
 
             {activeTab === 'material' && (
                 <div className="report-section">
-                    <h3><MdInventory2 className="report-icon" /> Material Stock Distribution</h3>
+                    <h3><MdInventory2 className="report-icon" /> {t('reports.material_stock')}</h3>
                     <div className="report-chart-container">
                         {inventory.length > 0 ? (
                             <Doughnut data={materialChartData} options={doughnutOptions} />
                         ) : (
-                            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No inventory data available.</div>
+                            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>{t('reports.no_inventory_data')}</div>
                         )}
                     </div>
                     <div className="report-summary-grid">
                         <div className="report-summary-item">
                             <p className="report-summary-value">{inventory.length}</p>
-                            <p className="report-summary-label">Total Materials</p>
+                            <p className="report-summary-label">{t('reports.total_materials')}</p>
                         </div>
                         <div className="report-summary-item">
                             <p className="report-summary-value">{inventory.filter((i) => i.quantity <= i.min_stock).length}</p>
-                            <p className="report-summary-label">Low Stock Items</p>
+                            <p className="report-summary-label">{t('reports.low_stock')}</p>
                         </div>
                         <div className="report-summary-item">
                             <p className="report-summary-value">{inventory.filter((i) => i.quantity > i.min_stock).length}</p>
-                            <p className="report-summary-label">Adequate Stock</p>
+                            <p className="report-summary-label">{t('reports.adequate_stock')}</p>
                         </div>
                     </div>
                 </div>
@@ -205,12 +207,12 @@ const ReportsPage = () => {
 
             {activeTab === 'progress' && (
                 <div className="report-section">
-                    <h3><MdTrendingUp className="report-icon" /> Project Progress Trends</h3>
+                    <h3><MdTrendingUp className="report-icon" /> {t('reports.project_progress_trends')}</h3>
                     <div className="report-chart-container">
                         {projects.length > 0 ? (
                             <Bar data={progressChartData} options={chartOptions} />
                         ) : (
-                            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>No project data available.</div>
+                            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>{t('reports.no_project_data')}</div>
                         )}
                     </div>
                     <div className="report-summary-grid">
@@ -223,7 +225,7 @@ const ReportsPage = () => {
                         {projects.length === 0 && (
                             <div className="report-summary-item">
                                 <p className="report-summary-value">—</p>
-                                <p className="report-summary-label">No projects yet</p>
+                                <p className="report-summary-label">{t('reports.no_projects_yet')}</p>
                             </div>
                         )}
                     </div>

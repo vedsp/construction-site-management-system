@@ -6,9 +6,9 @@ import {
     updateMaterialRequestStatus
 } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import {
     MdAdd,
-    MdEdit,
     MdCheckCircle,
     MdCancel,
     MdDownload,
@@ -31,6 +31,7 @@ const STATUS_CONFIG = {
 
 const MaterialsPage = () => {
     const { user, userRole } = useAuth();
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const [requests, setRequests] = useState([]);
@@ -181,15 +182,15 @@ const MaterialsPage = () => {
         <div className="materials-page">
             <div className="page-header-row">
                 <div className="page-header">
-                    <h1>Material Requests</h1>
+                    <h1>{t('materials.title')}</h1>
                 </div>
 
                 <div className="materials-header-actions">
                     <button
                         className="btn btn-outline"
-                        onClick={() => navigate('/inventory')}
+                        onClick={() => navigate('/materials/inventory')}
                     >
-                        <MdInventory /> Current Inventory
+                        <MdInventory /> {t('materials.current_inventory')}
                     </button>
 
                     {userRole === 'contractor' && (
@@ -197,7 +198,7 @@ const MaterialsPage = () => {
                             className="btn btn-primary"
                             onClick={() => setShowForm(true)}
                         >
-                            <MdAdd /> New Request
+                            <MdAdd /> {t('materials.new_request')}
                         </button>
                     )}
                 </div>

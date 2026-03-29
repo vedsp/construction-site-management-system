@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getMaterials } from '../../services/api';
-import { MdWarning, MdArrowBack } from 'react-icons/md';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { MdArrowBack, MdWarning } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import './MaterialsPage.css';
 
 const InventoryPage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -21,21 +23,21 @@ const InventoryPage = () => {
         <div className="materials-page">
             <div className="page-header-row">
                 <div className="page-header">
-                    <h1>Current Inventory</h1>
-                    <p>Track material stock levels across all sites</p>
+                    <h1>{t('inventory.title')}</h1>
+                    <p>{t('inventory.subtitle')}</p>
                 </div>
                 <button className="btn btn-outline" onClick={() => navigate('/materials')}>
-                    <MdArrowBack /> Back to Requests
+                    <MdArrowBack /> {t('inventory.back_to_requests')}
                 </button>
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Loading inventory…</div>
+                <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>{t('inventory.loading')}</div>
             ) : (
                 <div className="inventory-grid">
                     {inventory.length === 0 && (
                         <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)', gridColumn: '1/-1' }}>
-                            <p>No inventory items found.</p>
+                            <p>{t('inventory.no_items')}</p>
                         </div>
                     )}
                     {inventory.map((item) => {

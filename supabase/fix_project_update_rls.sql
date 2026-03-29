@@ -1,4 +1,4 @@
--- ============================================================
+git push origin main-- ============================================================
 -- Fix: Allow project updates for users whose role is 'admin'
 -- either in the profiles table OR in auth user_metadata.
 -- Run this in the Supabase SQL Editor.

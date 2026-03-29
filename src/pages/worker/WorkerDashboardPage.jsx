@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { getWorkerTasks, getWorkerAttendanceToday } from '../../services/api';
 import { MdCheckCircle, MdCancel, MdAssignment, MdAccessTime } from 'react-icons/md';
 import { toast } from 'react-toastify';
@@ -7,7 +8,8 @@ import './WorkerDashboardPage.css';
 
 const WorkerDashboardPage = () => {
     const { user } = useAuth();
-    const displayName = user?.user_metadata?.full_name || 'Worker';
+    const { t } = useTranslation();
+    const displayName = user?.user_metadata?.full_name || t('roles.worker');
 
     const [tasks, setTasks] = useState([]);
     const [attendance, setAttendance] = useState(null);
@@ -34,7 +36,7 @@ const WorkerDashboardPage = () => {
         <div className="worker-dashboard">
             <div className="worker-welcome">
                 <div>
-                    <h1>Welcome, {displayName}!</h1>
+                    <h1>{t('worker_dashboard.welcome', { name: displayName })}</h1>
                     <p>{todayStr}</p>
                 </div>
             </div>
@@ -43,7 +45,7 @@ const WorkerDashboardPage = () => {
             <div className="worker-card">
                 <div className="worker-card-header">
                     <MdAccessTime className="worker-card-icon" />
-                    <h2>Today's Attendance</h2>
+                    <h2>{t('worker_dashboard.todays_attendance')}</h2>
                 </div>
 
                 {loadingAttendance ? (
@@ -51,16 +53,16 @@ const WorkerDashboardPage = () => {
                 ) : attendance ? (
                     <div className={`attendance-status-badge ${attendance.status}`}>
                         {attendance.status === 'present'
-                            ? <><MdCheckCircle /> Present Today</>
-                            : <><MdCancel /> Absent Today</>}
+                            ? <><MdCheckCircle /> {t('worker_dashboard.present_today')}</>
+                            : <><MdCancel /> {t('worker_dashboard.absent_today')}</>}
                         <span className="attendance-time">
                             {attendance.check_in_time
-                                ? ` · Checked in at ${new Date(attendance.check_in_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+                                ? ` · ${t('worker_dashboard.checked_in_at', { time: new Date(attendance.check_in_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) })}`
                                 : ''}
                         </span>
                     </div>
                 ) : (
-                    <p className="worker-muted">Attendance not marked yet for today.</p>
+                    <p className="worker-muted">{t('worker_dashboard.not_marked')}</p>
                 )}
             </div>
 
@@ -68,14 +70,14 @@ const WorkerDashboardPage = () => {
             <div className="worker-card">
                 <div className="worker-card-header">
                     <MdAssignment className="worker-card-icon" />
-                    <h2>My Assigned Tasks</h2>
+                    <h2>{t('worker_dashboard.my_tasks')}</h2>
                     <span className="worker-task-count">{tasks.length}</span>
                 </div>
 
                 {loadingTasks ? (
-                    <p className="worker-muted">Loading tasks…</p>
+                    <p className="worker-muted">{t('worker_dashboard.loading_tasks')}</p>
                 ) : tasks.length === 0 ? (
-                    <p className="worker-muted">No tasks assigned to you yet.</p>
+                    <p className="worker-muted">{t('worker_dashboard.no_tasks')}</p>
                 ) : (
                     <div className="worker-task-list">
                         {tasks.map((task) => (
@@ -91,7 +93,7 @@ const WorkerDashboardPage = () => {
                                         )}
                                         {task.due_date && (
                                             <span className="worker-task-due">
-                                                Due: {new Date(task.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                {t('worker_dashboard.due')}: {new Date(task.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                             </span>
                                         )}
                                     </div>
