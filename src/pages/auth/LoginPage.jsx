@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { MdPerson, MdLock } from 'react-icons/md';
@@ -10,24 +10,28 @@ const LoginPage = () => {
     const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, isDemo } = useAuth();
+    const { login, user } = useAuth();
     const navigate = useNavigate();
+
+    // If perfectly logged in, bounce to dashboard explicitly
+    if (user) {
+        return <Navigate to="/dashboard" replace />;
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        if (!email || !password || !role) {
+        if (!email || !password) {
             setError(t('login.fill_all_fields'));
             return;
         }
 
         setLoading(true);
         try {
-            await login(email, password, role);
+            await login(email, password);
             navigate('/dashboard');
         } catch (err) {
             setError(err.message || t('login.login_failed'));
@@ -45,12 +49,6 @@ const LoginPage = () => {
                 <h1>{t('sidebar.brand')}</h1>
                 <p>{t('sidebar.tagline')}</p>
             </div>
-
-            {isDemo && (
-                <div className="login-demo-badge">
-                    {t('login.demo_mode')}
-                </div>
-            )}
 
             <div className="login-card">
                 <h2>{t('login.title')}</h2>
@@ -89,23 +87,6 @@ const LoginPage = () => {
                                 autoComplete="current-password"
                             />
                         </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">
-                            {t('login.role')} <span className="required">*</span>
-                        </label>
-                        <select
-                            className="form-select"
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                        >
-                            <option value="">{t('login.select_role')}</option>
-                            <option value="admin">{t('roles.admin')}</option>
-                            <option value="site_engineer">{t('roles.site_engineer')}</option>
-                            <option value="contractor">{t('roles.contractor')}</option>
-                            <option value="worker">{t('roles.worker')}</option>
-                        </select>
                     </div>
 
                     <button type="submit" className="login-btn" disabled={loading}>

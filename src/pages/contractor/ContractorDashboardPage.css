@@ -1,0 +1,242 @@
+/* ── Contractor Dashboard Aesthetics ───────────────────────────────────────── */
+
+.contractor-dashboard {
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* ── Hero / Greeting ─────────────────────────────────────────────────────── */
+.contractor-hero {
+    background: linear-gradient(135deg, var(--primary) 0%, #ff8a4c 100%);
+    border-radius: var(--border-radius-lg);
+    padding: 32px;
+    color: white;
+    box-shadow: 0 8px 16px rgba(232, 101, 26, 0.2);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.contractor-hero::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    transform: translate(30%, -30%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.contractor-hero h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.contractor-hero p {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0;
+    max-width: 600px;
+}
+
+/* ── Stats Grid ──────────────────────────────────────────────────────────── */
+.contractor-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* Note: StatCard handles its own base styling, but we can augment the wrapper */
+.contractor-stats-grid > div {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contractor-stats-grid > div:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Quick Actions ───────────────────────────────────────────────────────── */
+.contractor-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.contractor-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+     gap: 10px;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-md);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+}
+
+.contractor-action-btn svg {
+    font-size: 1.25rem;
+    color: var(--primary);
+    transition: transform 0.2s;
+}
+
+.contractor-action-btn.primary {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.contractor-action-btn.primary svg {
+    color: white;
+}
+
+.contractor-action-btn:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.contractor-action-btn.primary:hover {
+    background: #d45915;
+}
+
+.contractor-action-btn:hover svg {
+    transform: scale(1.15);
+}
+
+/* ── Panels / Widgets ────────────────────────────────────────────────────── */
+.contractor-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.contractor-panel-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.contractor-panel-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.contractor-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.contractor-panel-header h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.contractor-panel-header svg {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+/* List Items */
+.contractor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contractor-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    background: var(--bg-light);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-md);
+    transition: all 0.2s;
+}
+
+.contractor-list-item:hover {
+    background: white;
+    border-color: var(--primary);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(232, 101, 26, 0.08);
+}
+
+.contractor-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contractor-item-title {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.contractor-item-meta {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.contractor-empty {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    background: var(--bg-light);
+    border-radius: var(--border-radius-md);
+    border: 1px dashed var(--border-color);
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .contractor-dashboard {
+        padding: 16px;
+    }
+    .contractor-panels {
+        grid-template-columns: 1fr;
+    }
+    .contractor-hero h1 {
+        font-size: 1.5rem;
+    }
+}

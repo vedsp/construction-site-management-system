@@ -1,15 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import StatCard from '../../components/dashboard/StatCard';
-import { getContractorStats, getMaterialRequestsByContractor, getTasksByContractor, createMaterialRequest, getProjects } from '../../services/api';
+import {
+    getContractorStats,
+    getTasksByContractor,
+    getMaterialRequestsByContractor,
+    createMaterialRequest,
+    getProjects
+} from '../../services/api';
 import { MdAssignment, MdInventory2, MdFolder, MdAdd } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import MaterialRequestForm from '../../components/materials/MaterialRequestForm';
+import './ContractorDashboardPage.css';
 
 const ContractorDashboardPage = () => {
     const { user } = useAuth();
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const displayName = user?.user_metadata?.full_name || user?.email || t('roles.contractor');
 
     const [stats, setStats] = useState({ assignedTasks: 0, myMaterialRequests: 0, activeProjectsCount: 0 });
@@ -73,66 +82,73 @@ const ContractorDashboardPage = () => {
     };
 
     return (
-        <div className="dashboard-page" style={{ padding: '24px' }}>
-            <div className="dashboard-welcome" style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-                    {t('contractor_dashboard.welcome', { name: displayName })}
-                </h1>
-                <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t('contractor_dashboard.subtitle')}</p>
+        <div className="contractor-dashboard">
+            <div className="contractor-hero">
+                <h1>{t('contractor_dashboard.welcome', { name: displayName })}</h1>
+                <p>{t('contractor_dashboard.subtitle', 'Here is an overview of your work and requests.')}</p>
             </div>
 
-            <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+            <div className="contractor-stats-grid">
                 <StatCard
-                    label={t('contractor_dashboard.assigned_tasks')}
+                    label={t('contractor_dashboard.assigned_tasks', 'Assigned Tasks')}
                     value={loading ? '…' : stats.assignedTasks}
-                    subtitle={t('contractor_dashboard.in_progress_pending')}
+                    subtitle={t('contractor_dashboard.in_progress_pending', 'In Progress / Pending')}
                     icon={MdAssignment}
-                    iconBg="var(--icon-blue-bg)"
-                    iconColor="var(--icon-blue)"
+                    iconBg="rgba(59, 130, 246, 0.1)"
+                    iconColor="#3B82F6"
                 />
                 <StatCard
-                    label={t('contractor_dashboard.my_material_requests')}
+                    label={t('contractor_dashboard.my_material_requests', 'My Material Requests')}
                     value={loading ? '…' : stats.myMaterialRequests}
-                    subtitle={t('contractor_dashboard.total_active_requests')}
+                    subtitle={t('contractor_dashboard.total_active_requests', 'Total Active')}
                     icon={MdInventory2}
-                    iconBg="var(--icon-orange-bg)"
-                    iconColor="var(--icon-orange)"
+                    iconBg="rgba(232, 101, 26, 0.1)"
+                    iconColor="var(--primary)"
                 />
                 <StatCard
-                    label={t('contractor_dashboard.active_projects')}
+                    label={t('contractor_dashboard.active_projects', 'Active Projects')}
                     value={loading ? '…' : stats.activeProjectsCount}
-                    subtitle={t('contractor_dashboard.projects_assigned')}
+                    subtitle={t('contractor_dashboard.projects_assigned', 'Projects Assigned')}
                     icon={MdFolder}
-                    iconBg="var(--icon-green-bg)"
-                    iconColor="var(--icon-green)"
+                    iconBg="rgba(34, 197, 94, 0.1)"
+                    iconColor="#22C55E"
                 />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-                <button className="btn btn-primary" onClick={() => setShowMaterialForm(true)}>
+            {/* Quick Actions Panel */}
+            <div className="contractor-actions-grid">
+                <button className="contractor-action-btn primary" onClick={() => setShowMaterialForm(true)}>
                     <MdAdd /> {t('contractor_dashboard.request_material')}
+                </button>
+                <button className="contractor-action-btn" onClick={() => navigate('/tasks')}>
+                    <MdContentPaste /> {t('contractor_dashboard.view_all_tasks', 'View All Tasks')}
+                </button>
+                <button className="contractor-action-btn" onClick={() => navigate('/materials')}>
+                    <MdInventory2 /> {t('contractor_dashboard.view_inventory', 'View Inventory')}
                 </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-
+            <div className="contractor-panels">
                 {/* Active Tasks Widget */}
-                <div className="card" style={{ padding: '24px', borderRadius: '12px', background: 'var(--bg-primary)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-                        {t('contractor_dashboard.your_active_tasks')}
-                    </h3>
+                <div className="contractor-panel-card">
+                    <div className="contractor-panel-header">
+                        <MdAssignment />
+                        <h3>{t('contractor_dashboard.your_active_tasks', 'Your Active Tasks')}</h3>
+                    </div>
 
                     {loading ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('contractor_dashboard.loading_tasks')}</p>
+                        <div className="contractor-empty">{t('contractor_dashboard.loading_tasks', 'Loading tasks...')}</div>
                     ) : recentTasks.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>{t('contractor_dashboard.no_active_tasks')}</p>
+                        <div className="contractor-empty">{t('contractor_dashboard.no_active_tasks', 'No active tasks assigned to you right now.')}</div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className="contractor-list">
                             {recentTasks.map(task => (
-                                <div key={task.id} style={{ padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <p style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '0.9rem' }}>{task.name}</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Deadline: {new Date(task.deadline).toLocaleDateString('en-IN')}</p>
+                                <div key={task.id} className="contractor-list-item" onClick={() => navigate('/tasks')} style={{ cursor: 'pointer' }}>
+                                    <div className="contractor-item-info">
+                                        <p className="contractor-item-title">{task.name}</p>
+                                        <p className="contractor-item-meta">
+                                            {t('common.deadline', 'Deadline')}: {new Date(task.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                        </p>
                                     </div>
                                     <span className={`badge ${task.status === 'in_progress' ? 'badge-warning' : 'badge-secondary'}`}>
                                         {task.status.replace('_', ' ')}
@@ -144,32 +160,36 @@ const ContractorDashboardPage = () => {
                 </div>
 
                 {/* Recent Material Requests Widget */}
-                <div className="card" style={{ padding: '24px', borderRadius: '12px', background: 'var(--bg-primary)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-                        {t('contractor_dashboard.recent_material_requests')}
-                    </h3>
+                <div className="contractor-panel-card">
+                    <div className="contractor-panel-header">
+                        <MdInventory2 />
+                        <h3>{t('contractor_dashboard.recent_material_requests', 'Recent Material Requests')}</h3>
+                    </div>
 
                     {loading ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('contractor_dashboard.loading_requests')}</p>
+                        <div className="contractor-empty">{t('contractor_dashboard.loading_requests', 'Loading requests...')}</div>
                     ) : recentRequests.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>{t('contractor_dashboard.no_recent_requests')}</p>
+                        <div className="contractor-empty">{t('contractor_dashboard.no_recent_requests', 'You haven\'t made any material requests yet.')}</div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className="contractor-list">
                             {recentRequests.map(req => (
-                                <div key={req.id} style={{ padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <p style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '0.9rem' }}>{req.project?.name || 'Unknown Project'}</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(req.date).toLocaleDateString('en-IN')} • {req.items?.length || 0} items</p>
+                                <div key={req.id} className="contractor-list-item" onClick={() => navigate('/materials')} style={{ cursor: 'pointer' }}>
+                                    <div className="contractor-item-info">
+                                        <p className="contractor-item-title">{req.project?.name || 'Unknown Project'}</p>
+                                        <p className="contractor-item-meta">
+                                            {new Date(req.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} • {req.items?.length || 0} items
+                                        </p>
                                     </div>
                                     <span className={`badge ${req.status === 'approved' ? 'badge-success' : req.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`}>
-                                        {req.status.replace('_', ' ')}
+                                        {req.status === 'approved' ? t('common.approved', 'approved') :
+                                            req.status === 'rejected' ? t('common.rejected', 'rejected') :
+                                                t('common.pending', 'pending')}
                                     </span>
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
-
             </div>
 
             {/* Material Request Modal */}

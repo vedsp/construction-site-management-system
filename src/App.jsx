@@ -4,6 +4,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -23,6 +24,10 @@ import ReportsPage from './pages/reports/ReportsPage';
 import WorkerDashboardPage from './pages/worker/WorkerDashboardPage';
 import ContractorDashboardPage from './pages/contractor/ContractorDashboardPage';
 import UserApprovalsPage from './pages/admin/UserApprovalsPage';
+import WorkforceAttendancePage from './pages/attendance/WorkforceAttendancePage';
+import DailySiteProgressPage from './pages/reports/DailySiteProgressPage';
+import SiteMapPage from './pages/sitemap/SiteMapPage';
+import NotFoundPage from './pages/common/NotFoundPage';
 
 // Redirects workers to /worker-dashboard; redirects non-workers away from it
 const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
@@ -34,13 +39,14 @@ const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           {/* Protected routes */}
           <Route
@@ -109,6 +115,21 @@ function App() {
                 <UserApprovalsPage />
               </RoleRedirect>
             } />
+            <Route path="/workforce-attendance" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <WorkforceAttendancePage />
+              </RoleRedirect>
+            } />
+            <Route path="/daily-progress" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <DailySiteProgressPage />
+              </RoleRedirect>
+            } />
+            <Route path="/site-map" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <SiteMapPage />
+              </RoleRedirect>
+            } />
 
             {/* Worker-only route */}
             <Route path="/worker-dashboard" element={
@@ -119,12 +140,13 @@ function App() {
           </Route>
 
           {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
       <ToastContainer position="top-right" autoClose={4000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover />
-    </AuthProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

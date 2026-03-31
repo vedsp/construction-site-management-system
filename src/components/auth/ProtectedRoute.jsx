@@ -1,16 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import LoadingScreen from '../common/LoadingScreen';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
     const { user, userRole, loading } = useAuth();
 
     if (loading) {
-        return (
-            <div className="loading-screen">
-                <div className="loading-spinner"></div>
-                <p>Loading...</p>
-            </div>
-        );
+        return <LoadingScreen fullScreen={true} />;
     }
 
     if (!user) {

@@ -31,6 +31,9 @@ const navItems = [
     { path: '/tasks', labelKey: 'tasks', icon: MdAssignment, roles: ['admin', 'site_engineer', 'contractor'] },
     { path: '/invoices', labelKey: 'invoices', icon: MdReceipt, roles: ['admin'] },
     { path: '/reports', labelKey: 'reports', icon: MdBarChart, roles: ['admin'] },
+    { path: '/workforce-attendance', labelKey: 'workforce_attendance', icon: MdAccessTime, roles: ['admin', 'site_engineer'] },
+    { path: '/daily-progress', labelKey: 'daily_progress', icon: MdMap, roles: ['admin', 'site_engineer'] },
+    { path: '/site-map', labelKey: 'site_map', icon: MdMap, roles: ['admin', 'site_engineer'] },
     { path: '/user-approvals', labelKey: 'user_approvals', icon: MdHowToReg, roles: ['admin'] },
     // Worker-only nav
     { path: '/worker-dashboard', labelKey: 'my_dashboard', icon: MdDashboard, roles: ['worker'] },
