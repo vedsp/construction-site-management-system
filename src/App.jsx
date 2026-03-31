@@ -29,11 +29,17 @@ import DailySiteProgressPage from './pages/reports/DailySiteProgressPage';
 import SiteMapPage from './pages/sitemap/SiteMapPage';
 import NotFoundPage from './pages/common/NotFoundPage';
 
-// Redirects workers to /worker-dashboard; redirects non-workers away from it
-const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
+// Redirects users to their corresponding dashboard if they don't have access
+const RoleRedirect = ({ allowedRoles, children }) => {
   const { userRole } = useAuth();
   const role = userRole || 'admin';
-  if (!allowedRoles.includes(role)) return <Navigate to={redirectTo} replace />;
+  
+  if (!allowedRoles.includes(role)) {
+    if (role === 'contractor') return <Navigate to="/contractor-dashboard" replace />;
+    if (role === 'worker') return <Navigate to="/worker-dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+  
   return children;
 };
 
