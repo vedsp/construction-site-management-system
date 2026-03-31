@@ -10,7 +10,7 @@ import {
     createMaterialRequest,
     getProjects
 } from '../../services/api';
-import { MdAssignment, MdInventory2, MdFolder, MdAdd } from 'react-icons/md';
+import { MdAssignment, MdInventory2, MdFolder, MdAdd, MdContentPaste } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import MaterialRequestForm from '../../components/materials/MaterialRequestForm';
 import './ContractorDashboardPage.css';

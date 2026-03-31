@@ -186,13 +186,6 @@ const MaterialsPage = () => {
                 </div>
 
                 <div className="materials-header-actions">
-                    <button
-                        className="btn btn-outline"
-                        onClick={() => navigate('/materials/inventory')}
-                    >
-                        <MdInventory /> {t('materials.current_inventory')}
-                    </button>
-
                     {userRole === 'contractor' && (
                         <button
                             className="btn btn-primary"
@@ -204,90 +197,176 @@ const MaterialsPage = () => {
                 </div>
             </div>
 
-            {filteredRequests.map((request) => {
-                const sc =
-                    STATUS_CONFIG[request.status] || {
+            {/* Filter pills */}
+            <div className="materials-filter-bar">
+                {filters.map((f) => (
+                    <button
+                        key={f}
+                        className={`filter-pill${activeFilter === f ? ' active' : ''}`}
+                        onClick={() => setActiveFilter(f)}
+                    >
+                        {filterLabel(f)}
+                        <span className="filter-pill-count">
+                            {f === 'all'
+                                ? requests.length
+                                : requests.filter((r) => r.status === f).length}
+                        </span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Body */}
+            {loading ? (
+                <div className="materials-empty-state">
+                    <div className="materials-spinner" />
+                    <p>Loading requests…</p>
+                </div>
+            ) : filteredRequests.length === 0 ? (
+                <div className="materials-empty-state">
+                    <MdInventory size={48} style={{ opacity: 0.25 }} />
+                    <p style={{ marginTop: '12px', color: 'var(--text-secondary)' }}>
+                        {activeFilter === 'all'
+                            ? 'No material requests found.'
+                            : `No requests with status "${filterLabel(activeFilter)}".`}
+                    </p>
+                    {userRole === 'contractor' && (
+                        <button
+                            className="btn btn-primary"
+                            style={{ marginTop: '16px' }}
+                            onClick={() => setShowForm(true)}
+                        >
+                            <MdAdd /> New Request
+                        </button>
+                    )}
+                </div>
+            ) : (
+                filteredRequests.map((request) => {
+                    const sc = STATUS_CONFIG[request.status] || {
                         label: request.status,
-                        badge: 'badge-info'
+                        badge: 'badge-info',
                     };
 
-                return (
-                    <div key={request.id} className="request-card">
-                        <div className="request-card-header">
-                            <div>
-                                <p className="request-card-title">
-                                    {request.project?.name ||
-                                        getProjectName(request.project_id)}
-                                </p>
-                                <p className="request-card-meta">
-                                    Requested by {request.requested_by}
-                                </p>
+                    return (
+                        <div key={request.id} className="request-card">
+                            <div className="request-card-header">
+                                <div>
+                                    <p className="request-card-title">
+                                        {request.project?.name || getProjectName(request.project_id)}
+                                    </p>
+                                    <p className="request-card-meta">
+                                        Requested by <strong>{request.requested_by}</strong>
+                                        {request.date && (
+                                            <> &nbsp;·&nbsp; {new Date(request.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</>
+                                        )}
+                                        {request.items?.length > 0 && (
+                                            <> &nbsp;·&nbsp; {request.items.length} item{request.items.length !== 1 ? 's' : ''}</>
+                                        )}
+                                    </p>
+                                </div>
+                                <span className={`badge ${sc.badge}`}>{sc.label}</span>
                             </div>
-                            <span className={`badge ${sc.badge}`}>
-                                {sc.label}
-                            </span>
+
+                            {/* Items table */}
+                            {request.items && request.items.length > 0 && (
+                                <table className="request-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty</th>
+                                            <th>Unit</th>
+                                            <th>Urgency</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {request.items.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td>{item.name}</td>
+                                                <td>{item.quantity}</td>
+                                                <td>{item.unit || '—'}</td>
+                                                <td>
+                                                    <span className={`urgency-badge ${item.urgency}`}>
+                                                        {item.urgency}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+
+                            <div className="request-card-footer">
+                                <div className="request-footer-info">
+                                    {request.required_by && (
+                                        <div className="request-footer-item">
+                                            <span className="request-footer-label">Required By</span>
+                                            <span className="request-footer-value">
+                                                {new Date(request.required_by).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {request.estimated_cost > 0 && (
+                                        <div className="request-footer-item">
+                                            <span className="request-footer-label">Est. Cost</span>
+                                            <span className="request-footer-value">
+                                                ₹{Number(request.estimated_cost).toLocaleString('en-IN')}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    className="download-po-btn"
+                                    onClick={() => downloadPurchaseOrder(request)}
+                                >
+                                    <MdDownload /> Download PO
+                                </button>
+                            </div>
+
+                            {request.remarks && (
+                                <div className="request-remarks">
+                                    <p className="request-remarks-label">Remarks</p>
+                                    <p className="request-remarks-text">{request.remarks}</p>
+                                </div>
+                            )}
+
+                            {userRole === 'site_engineer' && request.status === 'pending' && (
+                                <div className="request-card-buttons">
+                                    <button
+                                        className="btn btn-success btn-sm"
+                                        onClick={() => handleEngineerApprove(request.id)}
+                                    >
+                                        <MdForward /> Forward to Admin
+                                    </button>
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => handleEngineerReject(request.id)}
+                                    >
+                                        <MdCancel /> Reject
+                                    </button>
+                                </div>
+                            )}
+
+                            {userRole === 'admin' &&
+                                (request.status === 'engineer_approved' || request.status === 'pending') && (
+                                    <div className="request-card-buttons">
+                                        <button
+                                            className="btn btn-success btn-sm"
+                                            onClick={() => handleAdminApprove(request.id)}
+                                        >
+                                            <MdCheckCircle /> Approve
+                                        </button>
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => handleAdminReject(request.id)}
+                                        >
+                                            <MdCancel /> Reject
+                                        </button>
+                                    </div>
+                                )}
                         </div>
-
-                        <button
-                            className="download-po-btn"
-                            onClick={() =>
-                                downloadPurchaseOrder(request)
-                            }
-                        >
-                            <MdDownload /> Download Purchase Order
-                        </button>
-
-                        {userRole === 'site_engineer' &&
-                            request.status === 'pending' && (
-                                <div className="request-card-buttons">
-                                    <button
-                                        className="btn btn-success btn-sm"
-                                        onClick={() =>
-                                            handleEngineerApprove(
-                                                request.id
-                                            )
-                                        }
-                                    >
-                                        <MdForward /> Forward
-                                    </button>
-                                    <button
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() =>
-                                            handleEngineerReject(
-                                                request.id
-                                            )
-                                        }
-                                    >
-                                        <MdCancel /> Reject
-                                    </button>
-                                </div>
-                            )}
-
-                        {userRole === 'admin' &&
-                            (request.status === 'engineer_approved' ||
-                                request.status === 'pending') && (
-                                <div className="request-card-buttons">
-                                    <button
-                                        className="btn btn-success btn-sm"
-                                        onClick={() =>
-                                            handleAdminApprove(request.id)
-                                        }
-                                    >
-                                        <MdCheckCircle /> Approve
-                                    </button>
-                                    <button
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() =>
-                                            handleAdminReject(request.id)
-                                        }
-                                    >
-                                        <MdCancel /> Reject
-                                    </button>
-                                </div>
-                            )}
-                    </div>
-                );
-            })}
+                    );
+                })
+            )}
 
             {showForm && (
                 <MaterialRequestForm
