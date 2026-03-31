@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { MdClose, MdAdd, MdDelete } from 'react-icons/md';
 
-const MaterialRequestForm = ({ projects = [], onSave, onClose }) => {
+const MaterialRequestForm = ({ projects = [], onSave, onClose, initialRequestedBy = '' }) => {
     const [projectId, setProjectId] = useState('');
-    const [requestedBy, setRequestedBy] = useState('');
+    const [requestedBy, setRequestedBy] = useState(initialRequestedBy);
     const [requiredBy, setRequiredBy] = useState('');
     const [remarks, setRemarks] = useState('');
     const [items, setItems] = useState([

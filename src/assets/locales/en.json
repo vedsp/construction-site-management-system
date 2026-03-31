@@ -318,16 +318,16 @@
     "assigned_tasks": "Assigned Tasks",
     "in_progress_pending": "In Progress & Pending",
     "my_material_requests": "My Material Requests",
-    "total_active_requests": "Total active requests",
+    "total_active_requests": "Pending requests",
     "active_projects": "Active Projects",
     "projects_assigned": "Projects you're assigned to",
     "request_material": "Request Material",
     "your_active_tasks": "Your Active Tasks",
     "loading_tasks": "Loading tasks...",
     "no_active_tasks": "No active tasks assigned entirely to you right now.",
-    "recent_material_requests": "Recent Material Requests",
+    "recent_material_requests": "Pending Material Requests",
     "loading_requests": "Loading requests...",
-    "no_recent_requests": "You haven't requested any materials recently."
+    "no_recent_requests": "You have no pending material requests."
   },
   "user_approvals": {
     "title": "User Approvals",

@@ -292,6 +292,7 @@ const MaterialsPage = () => {
             {showForm && (
                 <MaterialRequestForm
                     projects={projects}
+                    initialRequestedBy={user?.user_metadata?.full_name || ''}
                     onSave={handleSaveRequest}
                     onClose={() => setShowForm(false)}
                 />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import StatCard from '../../components/dashboard/StatCard';
-import { getContractorStats, getMaterialRequests, getTasks, createMaterialRequest, getProjects } from '../../services/api';
+import { getContractorStats, getMaterialRequestsByContractor, getTasksByContractor, createMaterialRequest, getProjects } from '../../services/api';
 import { MdAssignment, MdInventory2, MdFolder, MdAdd } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import MaterialRequestForm from '../../components/materials/MaterialRequestForm';
@@ -33,33 +33,25 @@ const ContractorDashboardPage = () => {
     const loadDashboardData = async () => {
         setLoading(true);
         try {
-            // Wait for all data to load
-            const [fetchedStats, allTasks, allRequests] = await Promise.all([
-                getContractorStats(user.metadata?.full_name || 'Contractor'), // Using full name for now as requested_by is string based in our current schema logic.
-                getTasks(),
-                getMaterialRequests()
+            const userName = user.user_metadata?.full_name || 'Contractor';
+            const userId = user.id;
+
+            // Fetch only relevant data for this contractor from the server
+            // Note: Tasks use UUID (userId), Material Requests use TEXT (userName)
+            const [fetchedStats, activeTasks, pendingRequests] = await Promise.all([
+                getContractorStats(userId, userName),
+                getTasksByContractor(userId),
+                getMaterialRequestsByContractor(userName, 'pending')
             ]);
-
-            // We only want projects where this contractor has tasks
-            const activeTasks = allTasks.filter(t => t.assigned_to === user.user_metadata?.full_name && t.status !== 'completed');
-
-            // Extract unique project IDs from active tasks to count "Active Projects"
-            const uniqueProjectIds = new Set(activeTasks.map(t => t.project_id).filter(Boolean));
 
             setStats({
                 ...fetchedStats,
-                activeProjectsCount: uniqueProjectIds.size
+                activeProjectsCount: fetchedStats.activeProjects || 0
             });
 
-            // Set lists for the UI tables
+            // Set lists for the UI tables (already filtered and ordered by the server)
             setRecentTasks(activeTasks.slice(0, 5));
-
-            // Material requests made by this contractor
-            setRecentRequests(
-                allRequests
-                    .filter(req => req.requested_by === (user.user_metadata?.full_name || 'Contractor'))
-                    .slice(0, 5)
-            );
+            setRecentRequests(pendingRequests.slice(0, 5));
 
         } catch (e) {
             toast.error('Failed to load dashboard data: ' + e.message);
@@ -70,7 +62,8 @@ const ContractorDashboardPage = () => {
 
     const handleCreateMaterialRequest = async (requestData) => {
         try {
-            await createMaterialRequest(requestData);
+            const { items, ...rest } = requestData;
+            await createMaterialRequest(rest, items);
             setShowMaterialForm(false);
             toast.success('Material request submitted successfully!');
             loadDashboardData(); // Refresh UI
@@ -183,6 +176,7 @@ const ContractorDashboardPage = () => {
             {showMaterialForm && (
                 <MaterialRequestForm
                     projects={projects}
+                    initialRequestedBy={user?.user_metadata?.full_name || ''}
                     onSave={handleCreateMaterialRequest}
                     onClose={() => setShowMaterialForm(false)}
                 />

@@ -346,6 +346,26 @@ export async function getMaterialRequests() {
     return (data || []).map((r) => ({ ...r, items: r.items || [] }));
 }
 
+export async function getMaterialRequestsByContractor(userName, status) {
+    let query = supabase
+        .from('material_requests')
+        .select('*, project:projects(id, name), items:material_request_items(*)')
+        .ilike('requested_by', userName);
+
+    if (status) {
+        if (status === 'pending') {
+            // For contractors, 'pending' includes both initial pending and engineer_approved
+            query = query.in('status', ['pending', 'engineer_approved']);
+        } else {
+            query = query.eq('status', status);
+        }
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map((r) => ({ ...r, items: r.items || [] }));
+}
+
 export async function createMaterialRequest(request, items) {
     const { data: reqData, error: reqError } = await supabase
         .from('material_requests')
@@ -386,6 +406,17 @@ export async function getTasks() {
         .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
+}
+
+export async function getTasksByContractor(userId) {
+    const { data, error } = await supabase
+        .from('tasks')
+        .select('*, project:projects(id, name), worker:workers(id, name)')
+        .eq('assigned_to', userId)
+        .neq('status', 'completed')
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
 }
 
 export async function createTask(task) {
@@ -510,22 +541,42 @@ export async function getDashboardStats(role) {
     };
 }
 
-export async function getContractorStats(userName) {
+export async function getContractorStats(userId, userName) {
+    // 1. Get counts for the dashboard cards
     const [tasks, materialRequests] = await Promise.all([
         supabase
             .from('tasks')
             .select('id', { count: 'exact', head: true })
-            .eq('assigned_to', userName)
+            .eq('assigned_to', userId)
             .in('status', ['Pending', 'In Progress']),
         supabase
             .from('material_requests')
             .select('id', { count: 'exact', head: true })
-            .eq('requested_by', userName)
+            .ilike('requested_by', userName)
+            .in('status', ['pending', 'engineer_approved'])
     ]);
+
+    // 2. Get active project count where user is active
+    // We count any project where they have a task OR have made a material request
+    const { data: projFromReq } = await supabase
+        .from('material_requests')
+        .select('project_id')
+        .ilike('requested_by', userName);
+
+    const { data: projFromTasks } = await supabase
+        .from('tasks')
+        .select('project_id')
+        .eq('assigned_to', userId);
+
+    const uniqueProjectIds = new Set([
+        ...(projFromReq || []).map(r => r.project_id),
+        ...(projFromTasks || []).map(t => t.project_id)
+    ].filter(Boolean));
 
     return {
         assignedTasks: tasks.count ?? 0,
         myMaterialRequests: materialRequests.count ?? 0,
+        activeProjects: uniqueProjectIds.size
     };
 }
 
