@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { getWorkerTasks, getWorkerAttendanceToday } from '../../services/api';
-import { MdCheckCircle, MdCancel, MdAssignment, MdAccessTime } from 'react-icons/md';
+import { getWorkerTasks, getWorkerAttendanceToday, checkInWorker } from '../../services/api';
+import { MdCheckCircle, MdCancel, MdAssignment, MdAccessTime, MdMyLocation } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import './WorkerDashboardPage.css';
 
@@ -15,6 +15,7 @@ const WorkerDashboardPage = () => {
     const [attendance, setAttendance] = useState(null);
     const [loadingTasks, setLoadingTasks] = useState(true);
     const [loadingAttendance, setLoadingAttendance] = useState(true);
+    const [checkingIn, setCheckingIn] = useState(false);
 
     useEffect(() => {
         if (!user?.id) return;
@@ -29,6 +30,48 @@ const WorkerDashboardPage = () => {
             .catch(() => setAttendance(null))
             .finally(() => setLoadingAttendance(false));
     }, [user?.id]);
+
+    const handleCheckIn = () => {
+        if (!navigator.geolocation) {
+            toast.error(t('worker_dashboard.gps_not_supported', 'Geolocation is not supported by your browser'));
+            return;
+        }
+
+        setCheckingIn(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                // Currently, worker metadata lacks direct project_id context in demo without fetching their full worker profile.
+                // However, we can use their first task's project_id if they have one or look it up.
+                // Since this app connects to Supabase, the best way is to fetch the worker's assigned project first or assume their tasks belong to their main project.
+                // Let's grab the project ID from their first task for the demo, or fetch worker details if needed.
+                try {
+                    // Let's fetch the worker's active project directly if possible, or wait, user.user_metadata might not have it.
+                    // For the sake of this feature, we will pass null if unknown, but since checkInWorker requires a projectId to do geofencing,
+                    // let's grab the project_id from their first task.
+                    const projectId = tasks.length > 0 ? tasks[0].project_id : null;
+                    if (!projectId) {
+                        toast.error('No project assignments found to verify location against.');
+                        setCheckingIn(false);
+                        return;
+                    }
+
+                    const newAttendance = await checkInWorker(user.id, latitude, longitude, projectId, true);
+                    setAttendance(newAttendance);
+                    toast.success(t('worker_dashboard.check_in_success', 'Checked in successfully!'));
+                } catch (e) {
+                    toast.error(e.message || t('worker_dashboard.check_in_error', 'Failed to check in'));
+                } finally {
+                    setCheckingIn(false);
+                }
+            },
+            (err) => {
+                toast.error(t('worker_dashboard.gps_denied', 'Please enable location services to check in'));
+                setCheckingIn(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    };
 
     const todayStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -62,7 +105,21 @@ const WorkerDashboardPage = () => {
                         </span>
                     </div>
                 ) : (
-                    <p className="worker-muted">{t('worker_dashboard.not_marked')}</p>
+                    <div className="worker-checkin-prompt">
+                        <p className="worker-muted">{t('worker_dashboard.not_marked')}</p>
+                        <button 
+                            className="btn btn-primary worker-checkin-btn" 
+                            onClick={handleCheckIn}
+                            disabled={checkingIn}
+                            style={{ marginTop: 16, width: '100%' }}
+                        >
+                            {checkingIn ? (
+                                <><span className="loading-spinner" style={{ width: 16, height: 16, borderWidth: 2 }} ></span> {t('worker_dashboard.getting_location', 'Verifying Location...')}</>
+                            ) : (
+                                <><MdMyLocation /> {t('worker_dashboard.check_in_now', 'Mark Attendance')}</>
+                            )}
+                        </button>
+                    </div>
                 )}
             </div>
 

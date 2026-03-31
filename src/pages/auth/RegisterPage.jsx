@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { MdLock, MdEmail, MdBadge, MdCheckCircle } from 'react-icons/md';
@@ -16,7 +16,12 @@ const RegisterPage = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const { register } = useAuth();
+    const { register, user } = useAuth();
+
+    // If perfectly logged in, bounce to dashboard explicitly
+    if (user) {
+        return <Navigate to="/dashboard" replace />;
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();

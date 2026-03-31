@@ -607,3 +607,187 @@ export async function markWorkerAttendance(workerId, status) {
     if (error) throw error;
     return data;
 }
+
+// ─── WORKFORCE ATTENDANCE (GPS-VALIDATED) ─────────────────────────────────────
+
+/**
+ * Calculate distance in metres between two lat/lng points using Haversine formula.
+ */
+function haversineDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000; // Earth radius in metres
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export async function checkInWorker(workerId, lat, lng, projectId, enforceGeofence = false) {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString();
+
+    // Verify against project geofence if projectId provided
+    let locationVerified = false;
+    if (projectId) {
+        const { data: project } = await supabase
+            .from('projects')
+            .select('site_lat, site_lng, geofence_radius')
+            .eq('id', projectId)
+            .maybeSingle();
+        if (project && project.site_lat && project.site_lng) {
+            const radius = project.geofence_radius || 300;
+            const distance = haversineDistance(lat, lng, project.site_lat, project.site_lng);
+            locationVerified = distance <= radius;
+
+            if (enforceGeofence && !locationVerified) {
+                throw new Error(`You are outside the ${radius}m property zone (Distance: ${Math.round(distance)}m). Please move closer to the site.`);
+            }
+        } else if (enforceGeofence) {
+            throw new Error('Project site coordinates are not set in the database. Cannot verify location.');
+        }
+    } else if (enforceGeofence) {
+        throw new Error('No project assigned to verify location against.');
+    }
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .upsert([{
+            worker_id: workerId,
+            project_id: projectId || null,
+            date: today,
+            status: 'present',
+            check_in_time: now,
+            check_in_lat: lat,
+            check_in_lng: lng,
+            location_verified: locationVerified,
+        }], { onConflict: 'worker_id,date' })
+        .select()
+        .single();
+    if (error) throw error;
+    return { ...data, locationVerified };
+}
+
+export async function checkOutWorker(workerId, lat, lng) {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .update({
+            check_out_time: now,
+            check_out_lat: lat,
+            check_out_lng: lng,
+        })
+        .eq('worker_id', workerId)
+        .eq('date', today)
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function getWorkforceAttendanceByDate(dateStr) {
+    const targetDate = dateStr || new Date().toISOString().split('T')[0];
+
+    // Fetch all active workers with project info
+    const { data: workers, error: wErr } = await supabase
+        .from('workers')
+        .select('*, project:projects(id, name, site_lat, site_lng, geofence_radius)')
+        .eq('status', 'active')
+        .order('name');
+    if (wErr) throw wErr;
+
+    // Fetch attendance records for the date
+    const { data: records, error: aErr } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('date', targetDate);
+    if (aErr) throw aErr;
+
+    const attendanceMap = Object.fromEntries((records || []).map((r) => [r.worker_id, r]));
+
+    return (workers || []).map((w) => ({
+        ...w,
+        attendance: attendanceMap[w.id] || null,
+    }));
+}
+
+export async function getAttendanceHistory(workerId, startDate, endDate) {
+    let query = supabase
+        .from('attendance')
+        .select('*, worker:workers(id, name)')
+        .order('date', { ascending: false });
+
+    if (workerId) query = query.eq('worker_id', workerId);
+    if (startDate) query = query.gte('date', startDate);
+    if (endDate) query = query.lte('date', endDate);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+}
+
+// ─── DAILY SITE PROGRESS REPORTS ──────────────────────────────────────────────
+
+export async function createDailyProgressReport(report) {
+    const { data, error } = await supabase
+        .from('daily_progress_reports')
+        .upsert([report], { onConflict: 'project_id,engineer_id,date' })
+        .select('*, project:projects(id, name)')
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function getDailyProgressReports(projectId, startDate, endDate) {
+    let query = supabase
+        .from('daily_progress_reports')
+        .select('*, project:projects(id, name), engineer:profiles(id, full_name)')
+        .order('date', { ascending: false });
+
+    if (projectId) query = query.eq('project_id', projectId);
+    if (startDate) query = query.gte('date', startDate);
+    if (endDate) query = query.lte('date', endDate);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+}
+
+export async function getRecentProgressReports(limit = 20) {
+    const { data, error } = await supabase
+        .from('daily_progress_reports')
+        .select('*, project:projects(id, name), engineer:profiles(id, full_name)')
+        .order('date', { ascending: false })
+        .limit(limit);
+    if (error) throw error;
+    return data || [];
+}
+
+// ─── SITE MAP ─────────────────────────────────────────────────────────────────
+
+export async function getProjectsWithCoordinates() {
+    const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, status, progress, budget, location, site_lat, site_lng, geofence_radius')
+        .not('site_lat', 'is', null)
+        .not('site_lng', 'is', null)
+        .order('name');
+    if (error) throw error;
+    return data || [];
+}
+
+export async function getTodayCheckInLocations() {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('id, worker_id, check_in_lat, check_in_lng, check_in_time, location_verified, worker:workers(id, name)')
+        .eq('date', today)
+        .eq('status', 'present')
+        .not('check_in_lat', 'is', null)
+        .not('check_in_lng', 'is', null);
+    if (error) throw error;
+    return data || [];
+}
