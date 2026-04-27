@@ -31,14 +31,22 @@ import DailySiteProgressPage from './pages/reports/DailySiteProgressPage';
 import SiteMapPage from './pages/sitemap/SiteMapPage';
 import NotFoundPage from './pages/common/NotFoundPage';
 
-// Redirects workers to /worker-dashboard; redirects non-workers away from it
-const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
+// Redirects users to their corresponding dashboard if they don't have access
+const RoleRedirect = ({ allowedRoles, children }) => {
   const { userRole, user, loading } = useAuth();
+  
   if (loading || (user && !userRole)) {
     return <LoadingScreen fullScreen={true} />;
   }
-  const role = userRole || user?.user_metadata?.role;
-  if (!allowedRoles.includes(role)) return <Navigate to={redirectTo} replace />;
+  
+  const role = userRole || user?.user_metadata?.role || 'admin';
+  
+  if (!allowedRoles.includes(role)) {
+    if (role === 'contractor') return <Navigate to="/contractor-dashboard" replace />;
+    if (role === 'worker') return <Navigate to="/worker-dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return children;
 };
 
@@ -63,87 +71,87 @@ function App() {
           >
             {/* Management routes */}
             <Route path="/dashboard" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <DashboardPage />
               </RoleRedirect>
             } />
 
             {/* Contractor Dashboard */}
             <Route path="/contractor-dashboard" element={
-              <RoleRedirect allowedRoles={['contractor']} redirectTo="/dashboard">
+              <RoleRedirect allowedRoles={['contractor']}>
                 <ContractorDashboardPage />
               </RoleRedirect>
             } />
 
             <Route path="/attendance" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <AttendancePage />
               </RoleRedirect>
             } />
             <Route path="/workers" element={
-              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
+              <RoleRedirect allowedRoles={['admin']}>
                 <WorkersPage />
               </RoleRedirect>
             } />
             <Route path="/materials" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer', 'contractor']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer', 'contractor']}>
                 <MaterialsPage />
               </RoleRedirect>
             } />
             <Route path="/inventory" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <InventoryPage />
               </RoleRedirect>
             } />
             <Route path="/projects" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <ProjectsPage />
               </RoleRedirect>
             } />
             <Route path="/projects/:id" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <ProjectDetailPage />
               </RoleRedirect>
             } />
             <Route path="/tasks" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer', 'contractor']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer', 'contractor']}>
                 <TasksPage />
               </RoleRedirect>
             } />
             <Route path="/invoices" element={
-              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
+              <RoleRedirect allowedRoles={['admin']}>
                 <InvoicesPage />
               </RoleRedirect>
             } />
             <Route path="/reports" element={
-              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
+              <RoleRedirect allowedRoles={['admin']}>
                 <ReportsPage />
               </RoleRedirect>
             } />
             <Route path="/user-approvals" element={
-              <RoleRedirect allowedRoles={['admin']} redirectTo="/dashboard">
+              <RoleRedirect allowedRoles={['admin']}>
                 <UserApprovalsPage />
               </RoleRedirect>
             } />
             <Route path="/workforce-attendance" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <WorkforceAttendancePage />
               </RoleRedirect>
             } />
             <Route path="/daily-progress" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <DailySiteProgressPage />
               </RoleRedirect>
             } />
             <Route path="/site-map" element={
-              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']}>
                 <SiteMapPage />
               </RoleRedirect>
             } />
 
             {/* Worker-only route */}
             <Route path="/worker-dashboard" element={
-              <RoleRedirect allowedRoles={['worker']} redirectTo="/dashboard">
+              <RoleRedirect allowedRoles={['worker']}>
                 <WorkerDashboardPage />
               </RoleRedirect>
             } />
