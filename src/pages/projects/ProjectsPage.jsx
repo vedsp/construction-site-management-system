@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getProjects, createProject, updateProject } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { toast } from 'react-toastify';
 import './ProjectsPage.css';
 
 const ProjectsPage = () => {
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const { userRole } = useAuth();
     const [projects, setProjects] = useState([]);
@@ -143,7 +145,10 @@ const ProjectsPage = () => {
                                             <MdEdit /> {t('common.edit')}
                                         </button>
                                     )}
-                                    <button className="btn btn-primary btn-sm">
+                                    <button 
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => navigate(`/projects/${project.id}`)}
+                                    >
                                         <MdVisibility /> {t('projects.view_details')}
                                     </button>
                                 </div>

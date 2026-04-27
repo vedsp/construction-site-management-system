@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import LoadingScreen from './components/common/LoadingScreen';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -18,6 +19,7 @@ import WorkersPage from './pages/workers/WorkersPage';
 import MaterialsPage from './pages/materials/MaterialsPage';
 import InventoryPage from './pages/materials/InventoryPage';
 import ProjectsPage from './pages/projects/ProjectsPage';
+import ProjectDetailPage from './pages/projects/ProjectDetailPage';
 import TasksPage from './pages/tasks/TasksPage';
 import InvoicesPage from './pages/invoices/InvoicesPage';
 import ReportsPage from './pages/reports/ReportsPage';
@@ -31,8 +33,11 @@ import NotFoundPage from './pages/common/NotFoundPage';
 
 // Redirects workers to /worker-dashboard; redirects non-workers away from it
 const RoleRedirect = ({ allowedRoles, redirectTo, children }) => {
-  const { userRole } = useAuth();
-  const role = userRole || 'admin';
+  const { userRole, user, loading } = useAuth();
+  if (loading || (user && !userRole)) {
+    return <LoadingScreen fullScreen={true} />;
+  }
+  const role = userRole || user?.user_metadata?.role;
   if (!allowedRoles.includes(role)) return <Navigate to={redirectTo} replace />;
   return children;
 };
@@ -93,6 +98,11 @@ function App() {
             <Route path="/projects" element={
               <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
                 <ProjectsPage />
+              </RoleRedirect>
+            } />
+            <Route path="/projects/:id" element={
+              <RoleRedirect allowedRoles={['admin', 'site_engineer']} redirectTo="/worker-dashboard">
+                <ProjectDetailPage />
               </RoleRedirect>
             } />
             <Route path="/tasks" element={

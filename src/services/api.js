@@ -11,6 +11,16 @@ export async function getProjects() {
     return data;
 }
 
+export async function getProjectById(id) {
+    const { data, error } = await supabase
+        .from('projects')
+        .select('*, tasks(*), material_requests(*)')
+        .eq('id', id)
+        .maybeSingle();
+    if (error) throw error;
+    return data;
+}
+
 export async function createProject(project) {
     const { data, error } = await supabase
         .from('projects')
@@ -399,13 +409,42 @@ export async function updateMaterialRequestStatus(id, status, approvedBy, review
 
 // ─── TASKS ────────────────────────────────────────────────────────────────────
 
+function isMissingTaskColumn(error, columnName) {
+    const raw = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`.toLowerCase();
+    const normalizedColumn = String(columnName || '').toLowerCase();
+    return Boolean(
+        error?.code === '42703' &&
+        (raw.includes(`tasks.${normalizedColumn}`) || raw.includes(`"${normalizedColumn}"`) || raw.includes(normalizedColumn))
+    );
+}
+
+function normalizeTaskDate(task) {
+    if (!task) return task;
+    const unifiedDate = task.due_date ?? task.deadline ?? null;
+    return {
+        ...task,
+        due_date: unifiedDate,
+        deadline: unifiedDate,
+    };
+}
+
 export async function getTasks() {
     const { data, error } = await supabase
         .from('tasks')
         .select('*, project:projects(id, name), worker:workers(id, name)')
         .order('created_at', { ascending: false });
+
+    if (error && isMissingTaskColumn(error, 'due_date')) {
+        const { data: retryData, error: retryErr } = await supabase
+            .from('tasks')
+            .select('id, title, description, project_id, assigned_to, status, priority, deadline, created_by, created_at, updated_at, project:projects(id, name), worker:workers(id, name)')
+            .order('created_at', { ascending: false });
+        if (retryErr) throw retryErr;
+        return (retryData || []).map(normalizeTaskDate);
+    }
+
     if (error) throw error;
-    return data;
+    return (data || []).map(normalizeTaskDate);
 }
 
 export async function getTasksByContractor(userId) {
@@ -415,18 +454,51 @@ export async function getTasksByContractor(userId) {
         .eq('assigned_to', userId)
         .neq('status', 'completed')
         .order('created_at', { ascending: false });
+
+    if (error && isMissingTaskColumn(error, 'due_date')) {
+        const { data: retryData, error: retryErr } = await supabase
+            .from('tasks')
+            .select('id, title, description, project_id, assigned_to, status, priority, deadline, created_by, created_at, updated_at, project:projects(id, name), worker:workers(id, name)')
+            .eq('assigned_to', userId)
+            .neq('status', 'completed')
+            .order('created_at', { ascending: false });
+        if (retryErr) throw retryErr;
+        return (retryData || []).map(normalizeTaskDate);
+    }
+
     if (error) throw error;
-    return data || [];
+    return (data || []).map(normalizeTaskDate);
 }
 
 export async function createTask(task) {
-    const { data, error } = await supabase
-        .from('tasks')
-        .insert([task])
-        .select('*, project:projects(id, name), worker:workers(id, name)')
-        .single();
+    const tryInsert = async (payload) => {
+        return await supabase
+            .from('tasks')
+            .insert([payload])
+            .select('*, project:projects(id, name), worker:workers(id, name)')
+            .single();
+    };
+
+    let { data, error } = await tryInsert(task);
+
+    if (error && isMissingTaskColumn(error, 'due_date')) {
+        const fallbackPayload = { ...task };
+        if (fallbackPayload.due_date && !fallbackPayload.deadline) {
+            fallbackPayload.deadline = fallbackPayload.due_date;
+        }
+        delete fallbackPayload.due_date;
+        ({ data, error } = await tryInsert(fallbackPayload));
+    } else if (error && isMissingTaskColumn(error, 'deadline')) {
+        const fallbackPayload = { ...task };
+        if (fallbackPayload.deadline && !fallbackPayload.due_date) {
+            fallbackPayload.due_date = fallbackPayload.deadline;
+        }
+        delete fallbackPayload.deadline;
+        ({ data, error } = await tryInsert(fallbackPayload));
+    }
+
     if (error) throw error;
-    return data;
+    return normalizeTaskDate(data);
 }
 
 export async function updateTaskStatus(id, status) {
@@ -437,7 +509,7 @@ export async function updateTaskStatus(id, status) {
         .select()
         .single();
     if (error) throw error;
-    return data;
+    return normalizeTaskDate(data);
 }
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
@@ -625,9 +697,34 @@ export async function getWorkerTasks(userId) {
         .from('tasks')
         .select('*, project:projects(name)')
         .eq('assigned_to', userId)
-        .order('due_date', { ascending: true });
+        .order('created_at', { ascending: false });
+
+    if (error && isMissingTaskColumn(error, 'due_date')) {
+        const { data: retryData, error: retryErr } = await supabase
+            .from('tasks')
+            .select('id, title, description, project_id, assigned_to, status, priority, deadline, created_by, created_at, updated_at, project:projects(name)')
+            .eq('assigned_to', userId)
+            .order('created_at', { ascending: false });
+        if (retryErr) throw retryErr;
+        return (retryData || [])
+            .map(normalizeTaskDate)
+            .sort((a, b) => {
+                const aTime = a?.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
+                const bTime = b?.due_date ? new Date(b.due_date).getTime() : Number.POSITIVE_INFINITY;
+                return aTime - bTime;
+            });
+    }
+
     if (error) throw error;
-    return data || [];
+
+    // Keep a consistent due-date-first order in the UI, regardless of DB column naming.
+    return (data || [])
+        .map(normalizeTaskDate)
+        .sort((a, b) => {
+            const aTime = a?.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
+            const bTime = b?.due_date ? new Date(b.due_date).getTime() : Number.POSITIVE_INFINITY;
+            return aTime - bTime;
+        });
 }
 
 export async function getWorkerAttendanceToday(workerId) {

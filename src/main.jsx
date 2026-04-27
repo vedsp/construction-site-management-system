@@ -4,16 +4,34 @@ import './index.css';
 import './i18n';
 import App from './App.jsx';
 
-// Register Service Worker
+// Register service worker only in production.
+// In development, remove existing registrations/caches so stale bundles do not persist.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .then((registration) => {
-        console.log('Service Worker registered successfully:', registration);
-      })
-      .catch((error) => {
-        console.log('Service Worker registration failed:', error);
-      });
+  window.addEventListener('load', async () => {
+    if (import.meta.env.PROD) {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then((registration) => {
+          console.log('Service Worker registered successfully:', registration);
+        })
+        .catch((error) => {
+          console.log('Service Worker registration failed:', error);
+        });
+      return;
+    }
+
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+
+      const cacheKeys = await caches.keys();
+      await Promise.all(
+        cacheKeys
+          .filter((key) => key.startsWith('csms-'))
+          .map((key) => caches.delete(key))
+      );
+    } catch (error) {
+      console.log('Service Worker cleanup failed:', error);
+    }
   });
 }
 

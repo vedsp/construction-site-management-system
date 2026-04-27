@@ -1,5 +1,5 @@
 // Service Worker for CSMS PWA
-const CACHE_NAME = 'csms-v1';
+const CACHE_NAME = 'csms-v2';
 const OFFLINE_PAGE = '/offline.html';
 
 // Cache assets on install
@@ -61,6 +61,30 @@ self.addEventListener('fetch', (event) => {
           });
         });
       })
+    );
+    return;
+  }
+
+  // Always prefer network for source modules and API-like endpoints to prevent stale app code.
+  if (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.includes('/@vite/') ||
+    url.pathname.includes('/node_modules/.vite/') ||
+    request.destination === 'script' ||
+    request.destination === 'style'
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }

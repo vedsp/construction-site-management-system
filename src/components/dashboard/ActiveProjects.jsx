@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getProjects } from '../../services/api';
 import './ActiveProjects.css';
 
@@ -7,6 +7,7 @@ const ActiveProjects = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const location = useLocation();
+    const navigate = useNavigate();
 
     const fetchProjects = useCallback(() => {
         setLoading(true);
@@ -40,7 +41,12 @@ const ActiveProjects = () => {
             )}
 
             {projects.map((project) => (
-                <div key={project.id} className="project-item">
+                <div 
+                    key={project.id} 
+                    className="project-item" 
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                    style={{ cursor: 'pointer' }}
+                >
                     <div className="project-item-info">
                         <div className="project-item-bar"></div>
                         <div style={{ flex: 1 }}>

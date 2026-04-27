@@ -256,7 +256,7 @@ const SiteMapPage = () => {
                                             )}
                                             <button
                                                 className="btn btn-primary btn-sm sitemap-popup-btn"
-                                                onClick={() => navigate('/projects')}
+                                                onClick={() => navigate(`/projects/${project.id}`)}
                                             >
                                                 <MdOpenInNew /> {t('site_map.view_project', 'View Project')}
                                             </button>
